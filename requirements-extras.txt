@@ -1,0 +1,4 @@
+# Optional extras, not needed for the web app or the online deployment.
+matplotlib>=3.8      # timing --plot  (slack histogram PNG)
+pyyaml>=6.0          # regmap specs written in YAML instead of JSON
+cocotb>=2.0          # run the generated Python testbenches (needs Icarus Verilog)

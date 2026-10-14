@@ -1,0 +1,46 @@
+{
+  "block": "uart",
+  "description": "Control and status registers of a simple UART peripheral.",
+  "base_address": "0x40001000",
+  "data_width": 32,
+  "registers": [
+    {
+      "name": "CTRL", "offset": "0x00", "access": "RW",
+      "description": "Main control register",
+      "fields": [
+        {"name": "EN",       "bits": "0",    "reset": "0x0",  "description": "Enable the UART"},
+        {"name": "PARITY",   "bits": "2:1",  "reset": "0x0",  "description": "0 = none, 1 = even, 2 = odd"},
+        {"name": "STOP2",    "bits": "3",    "reset": "0x0",  "description": "1 = two stop bits"},
+        {"name": "BAUD_DIV", "bits": "19:4", "reset": "0x1B", "description": "Baud divider = clk / (16 * baud)"}
+      ]
+    },
+    {
+      "name": "STATUS", "offset": "0x04", "access": "RO",
+      "description": "Live status from the UART core",
+      "fields": [
+        {"name": "TX_BUSY",  "bits": "0", "description": "Transmitter busy"},
+        {"name": "RX_VALID", "bits": "1", "description": "Received byte available"},
+        {"name": "TX_LEVEL", "bits": "7:4", "description": "TX FIFO fill level"}
+      ]
+    },
+    {
+      "name": "INT_STATUS", "offset": "0x08", "access": "W1C",
+      "description": "Interrupt flags - write 1 to clear",
+      "fields": [
+        {"name": "RX_DONE",  "bits": "0", "description": "Byte received"},
+        {"name": "TX_DONE",  "bits": "1", "description": "Byte sent"},
+        {"name": "OVERRUN",  "bits": "2", "description": "RX FIFO overrun"}
+      ]
+    },
+    {
+      "name": "TX_DATA", "offset": "0x0C", "access": "WO",
+      "description": "Write a byte here to transmit it",
+      "fields": [{"name": "DATA", "bits": "7:0", "description": "Byte to send"}]
+    },
+    {
+      "name": "SCRATCH", "offset": "0x10", "access": "RW",
+      "description": "General-purpose scratch register (no fields: whole word)",
+      "reset": "0xDEADBEEF"
+    }
+  ]
+}

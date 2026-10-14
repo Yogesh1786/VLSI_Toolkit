@@ -1,0 +1,6 @@
+# The core toolkit uses only the Python standard library.
+# Web app (the React frontend talks to this API server):
+fastapi>=0.141        # python -m uvicorn api.main:app --port 8000
+uvicorn>=0.29
+
+# Optional extras (matplotlib, pyyaml, cocotb): pip install -r requirements-extras.txt

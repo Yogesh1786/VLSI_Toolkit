@@ -1,0 +1,6 @@
+VCD info: dumpfile tb_counter.vcd opened for output.
+[55000] count=00 wrap=0
+[65000] count=01 wrap=0
+[1105000] count=2a wrap=0
+[1105000] TEST PASSED
+tb_counter.v:84: $finish called at 1105000 (1ps)

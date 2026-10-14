@@ -1,0 +1,46 @@
+****************************************
+Report : area
+Design : uart_top
+Version: T-2022.03 (example report for VLSI Toolkit)
+****************************************
+
+Library(s) Used:
+
+    saed32rvt_tt1p05v25c (File: saed32rvt_tt1p05v25c.db)
+
+Number of ports:                           54
+Number of nets:                          1188
+Number of cells:                         1671
+Number of combinational cells:           1452
+Number of sequential cells:               219
+Number of macros/black boxes:               1
+Number of buf/inv:                        166
+Number of references:                      38
+
+Combinational area:              14822.611720
+Buf/Inv area:                     1205.433040
+Noncombinational area:            6131.882305
+Macro/Black Box area:             2048.000000
+Net Interconnect area:      undefined  (No wire load specified)
+
+Total cell area:                 23002.494025
+Total area:                 undefined
+
+Hierarchical area distribution
+------------------------------
+
+                                  Global cell area          Local cell area
+                                  ------------------  -----------------------------
+Hierarchical cell                 Absolute   Percent  Combi-     Noncombi-  Black-
+                                  Total      Total    national   national   boxes    Design
+--------------------------------  ---------  -------  ---------  ---------  -------  ---------
+uart_top                          23002.4940   100.0    18.7680     0.0000  2048.0000  uart_top
+u_rx_fifo                          9914.2210    43.1  6952.6400  2961.5810     0.0000  sync_fifo
+u_tx_fifo                          9914.2210    43.1  6952.6400  2961.5810     0.0000  sync_fifo
+u_rx                               1018.4770     4.4   612.0330   406.4440     0.0000  uart_rx
+u_tx                                902.1150     3.9   519.4640   382.6510     0.0000  uart_tx
+u_baud                              412.8960     1.8   167.0660   245.8300     0.0000  baud_gen
+--------------------------------  ---------  -------  ---------  ---------  -------  ---------
+Total                                                 15222.611  6958.0870  2048.0000
+
+1

@@ -1,0 +1,5 @@
+Chronologic VCS simulator copyright 1991-2025
+Command: ./simv +UVM_TESTNAME=uart_reset_test +ntb_random_seed=3141 -l uart_reset_test_3141.log
+UVM_INFO @ 0: reporter [RNTST] Running test uart_reset_test...
+UVM_INFO /proj/tb/env/uart_env.sv(88) @ 0: uvm_test_top.env [ENV] Build phase complete
+UVM_INFO /proj/tb/seq/uart_reset_seq.sv(41) @ 1200: uvm_test_top.env.agent.sqr@@seq [SEQ] Asserting reset mid-transfer

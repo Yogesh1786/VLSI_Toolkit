@@ -1,0 +1,7 @@
+# Questa Sim-64 vsim 2025.1  (directed test, no UVM)
+# vsim -c tb_sync_fifo -sv_seed 77 -do "run -all"
+# [100] write 16 words
+# ** Error: /proj/tb/tb_sync_fifo.sv(64): FIFO overflow: count=33 exceeds DEPTH=32
+#    Time: 3450 ns  Iteration: 1  Instance: /tb_sync_fifo
+# ** Note: $finish    : /proj/tb/tb_sync_fifo.sv(90)
+#    Time: 5000 ns  Iteration: 0  Instance: /tb_sync_fifo

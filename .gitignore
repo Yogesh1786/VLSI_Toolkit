@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Generated files
+output/
+sim.out
+*.vcd
+!examples/**/*.vcd
+
+# Web app
+web/node_modules/
+web/dist/
+web/tsconfig.tsbuildinfo
+
+# Local tools and secrets
+.vercel/
+.env
+.env.*
+.claude/

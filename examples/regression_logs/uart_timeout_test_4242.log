@@ -1,0 +1,17 @@
+Chronologic VCS simulator copyright 1991-2025
+Command: ./simv +UVM_TESTNAME=uart_timeout_test +ntb_random_seed=4242 -l uart_timeout_test_4242.log
+UVM_INFO @ 0: reporter [RNTST] Running test uart_timeout_test...
+UVM_INFO /proj/tb/env/uart_env.sv(88) @ 0: uvm_test_top.env [ENV] Build phase complete
+UVM_FATAL /tools/uvm-1.2/src/base/uvm_phase.svh(1491) @ 9200000: reporter [PH_TIMEOUT] Explicit timeout of 9200000 hit, indicating a probable testbench issue
+UVM_INFO /proj/tb/env/uart_scoreboard.sv(140) @ 98000: uvm_test_top.env.sb [SB] Checked 412 transactions
+
+--- UVM Report Summary ---
+
+** Report counts by severity
+UVM_INFO :  418
+UVM_WARNING :    1
+UVM_ERROR :    0
+UVM_FATAL :    1
+$finish called from file "/tools/uvm-1.2/src/base/uvm_root.svh", line 527.
+$finish at simulation time 98000000
+           V C S   S i m u l a t i o n   R e p o r t

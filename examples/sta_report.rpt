@@ -1,0 +1,252 @@
+OpenSTA 2.5.0  (example report generated for VLSI Toolkit)
+report_checks -path_delay min_max -group_count 100
+
+Startpoint: u_alu/a_reg[31] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_alu/y_reg[31] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ u_alu/a_reg[31]/CLK (sky130_fd_sc_hd__dfrtp_1)
+   2.16    2.16 ^ u_alu/a_reg[31]/Q (sky130_fd_sc_hd__dfrtp_1)
+   3.25    5.41 v u_alu/y_reg[31]/D (sky130_fd_sc_hd__dfrtp_1)
+            5.41   data arrival time
+
+   5.00    5.00   clock core_clk (rise edge)
+   0.00    5.00   clock network delay (ideal)
+  -0.11    4.89   library setup time
+            4.89   data required time
+---------------------------------------------------------
+            4.89   data required time
+           -5.41   data arrival time
+---------------------------------------------------------
+           -0.52   slack (VIOLATED)
+
+
+Startpoint: u_alu/a_reg[30] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_alu/y_reg[31] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ u_alu/a_reg[30]/CLK (sky130_fd_sc_hd__dfrtp_1)
+   2.08    2.08 ^ u_alu/a_reg[30]/Q (sky130_fd_sc_hd__dfrtp_1)
+   3.12    5.21 v u_alu/y_reg[31]/D (sky130_fd_sc_hd__dfrtp_1)
+            5.21   data arrival time
+
+   5.00    5.00   clock core_clk (rise edge)
+   0.00    5.00   clock network delay (ideal)
+  -0.11    4.89   library setup time
+            4.89   data required time
+---------------------------------------------------------
+            4.89   data required time
+           -5.21   data arrival time
+---------------------------------------------------------
+           -0.31   slack (VIOLATED)
+
+
+Startpoint: u_alu/b_reg[7] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_alu/y_reg[30] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ u_alu/b_reg[7]/CLK (sky130_fd_sc_hd__dfrtp_1)
+   1.99    1.99 ^ u_alu/b_reg[7]/Q (sky130_fd_sc_hd__dfrtp_1)
+   2.99    4.98 v u_alu/y_reg[30]/D (sky130_fd_sc_hd__dfrtp_1)
+            4.98   data arrival time
+
+   5.00    5.00   clock core_clk (rise edge)
+   0.00    5.00   clock network delay (ideal)
+  -0.10    4.90   library setup time
+            4.90   data required time
+---------------------------------------------------------
+            4.90   data required time
+           -4.98   data arrival time
+---------------------------------------------------------
+           -0.08   slack (VIOLATED)
+
+
+Startpoint: u_fifo/rptr_reg[2] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_fifo/dout_reg[15] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ u_fifo/rptr_reg[2]/CLK (sky130_fd_sc_hd__dfrtp_1)
+   1.65    1.65 ^ u_fifo/rptr_reg[2]/Q (sky130_fd_sc_hd__dfrtp_1)
+   2.47    4.12 v u_fifo/dout_reg[15]/D (sky130_fd_sc_hd__dfrtp_1)
+            4.12   data arrival time
+
+   5.00    5.00   clock core_clk (rise edge)
+   0.00    5.00   clock network delay (ideal)
+  -0.09    4.91   library setup time
+            4.91   data required time
+---------------------------------------------------------
+            4.91   data required time
+           -4.12   data arrival time
+---------------------------------------------------------
+            0.79   slack (MET)
+
+
+Startpoint: u_cnt/count_reg[3] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_cnt/count_reg[7] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ u_cnt/count_reg[3]/CLK (sky130_fd_sc_hd__dfrtp_1)
+   1.15    1.15 ^ u_cnt/count_reg[3]/Q (sky130_fd_sc_hd__dfrtp_1)
+   1.73    2.88 v u_cnt/count_reg[7]/D (sky130_fd_sc_hd__dfrtp_1)
+            2.88   data arrival time
+
+   5.00    5.00   clock core_clk (rise edge)
+   0.00    5.00   clock network delay (ideal)
+  -0.09    4.91   library setup time
+            4.91   data required time
+---------------------------------------------------------
+            4.91   data required time
+           -2.88   data arrival time
+---------------------------------------------------------
+            2.03   slack (MET)
+
+
+Startpoint: in_valid (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_ctrl/state_reg[1] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ in_valid/CLK (sky130_fd_sc_hd__dfrtp_1)
+   0.78    0.78 ^ in_valid/Q (sky130_fd_sc_hd__dfrtp_1)
+   1.17    1.95 v u_ctrl/state_reg[1]/D (sky130_fd_sc_hd__dfrtp_1)
+            1.95   data arrival time
+
+   5.00    5.00   clock core_clk (rise edge)
+   0.00    5.00   clock network delay (ideal)
+  -1.60    3.40   library setup time
+            3.40   data required time
+---------------------------------------------------------
+            3.40   data required time
+           -1.95   data arrival time
+---------------------------------------------------------
+            1.45   slack (MET)
+
+
+Startpoint: u_uart/baud_reg[4] (rising edge-triggered flip-flop clocked by uart_clk)
+Endpoint: u_uart/tick_reg (rising edge-triggered flip-flop clocked by uart_clk)
+Path Group: uart_clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock uart_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ u_uart/baud_reg[4]/CLK (sky130_fd_sc_hd__dfrtp_1)
+   2.92    2.92 ^ u_uart/baud_reg[4]/Q (sky130_fd_sc_hd__dfrtp_1)
+   4.38    7.30 v u_uart/tick_reg/D (sky130_fd_sc_hd__dfrtp_1)
+            7.30   data arrival time
+
+  20.00   20.00   clock uart_clk (rise edge)
+   0.00   20.00   clock network delay (ideal)
+  -0.12   19.88   library setup time
+           19.88   data required time
+---------------------------------------------------------
+           19.88   data required time
+           -7.30   data arrival time
+---------------------------------------------------------
+           12.58   slack (MET)
+
+
+Startpoint: u_fifo/wptr_reg[0] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_fifo/mem_reg[3][0] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ u_fifo/wptr_reg[0]/CLK (sky130_fd_sc_hd__dfrtp_1)
+   0.02    0.02 ^ u_fifo/wptr_reg[0]/Q (sky130_fd_sc_hd__dfrtp_1)
+   0.04    0.06 v u_fifo/mem_reg[3][0]/D (sky130_fd_sc_hd__dfrtp_1)
+            0.06   data arrival time
+
+   0.00    0.00   clock core_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.09    0.09   library hold time
+            0.09   data required time
+---------------------------------------------------------
+            0.09   data required time
+           -0.06   data arrival time
+---------------------------------------------------------
+           -0.02   slack (VIOLATED)
+
+
+Startpoint: u_cnt/count_reg[0] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_cnt/count_reg[0] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ u_cnt/count_reg[0]/CLK (sky130_fd_sc_hd__dfrtp_1)
+   0.06    0.06 ^ u_cnt/count_reg[0]/Q (sky130_fd_sc_hd__dfrtp_1)
+   0.09    0.14 v u_cnt/count_reg[0]/D (sky130_fd_sc_hd__dfrtp_1)
+            0.14   data arrival time
+
+   0.00    0.00   clock core_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.07    0.07   library hold time
+            0.07   data required time
+---------------------------------------------------------
+            0.07   data required time
+           -0.14   data arrival time
+---------------------------------------------------------
+            0.07   slack (MET)
+
+
+Startpoint: u_ctrl/state_reg[0] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_ctrl/state_reg[1] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: min
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ u_ctrl/state_reg[0]/CLK (sky130_fd_sc_hd__dfrtp_1)
+   0.08    0.08 ^ u_ctrl/state_reg[0]/Q (sky130_fd_sc_hd__dfrtp_1)
+   0.13    0.21 v u_ctrl/state_reg[1]/D (sky130_fd_sc_hd__dfrtp_1)
+            0.21   data arrival time
+
+   0.00    0.00   clock core_clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.07    0.07   library hold time
+            0.07   data required time
+---------------------------------------------------------
+            0.07   data required time
+           -0.21   data arrival time
+---------------------------------------------------------
+            0.14   slack (MET)
+

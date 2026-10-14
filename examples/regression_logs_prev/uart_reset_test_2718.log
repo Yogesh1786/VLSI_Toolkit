@@ -1,0 +1,17 @@
+Chronologic VCS simulator copyright 1991-2025
+Command: ./simv +UVM_TESTNAME=uart_reset_test +ntb_random_seed=2718 -l uart_reset_test_2718.log
+UVM_INFO @ 0: reporter [RNTST] Running test uart_reset_test...
+UVM_INFO /proj/tb/env/uart_env.sv(88) @ 0: uvm_test_top.env [ENV] Build phase complete
+UVM_WARNING /proj/tb/env/uart_env.sv(95) @ 0: uvm_test_top.env [CFG] baud rate not set, using default
+UVM_INFO /proj/tb/env/uart_scoreboard.sv(140) @ 98000: uvm_test_top.env.sb [SB] Checked 412 transactions
+
+--- UVM Report Summary ---
+
+** Report counts by severity
+UVM_INFO :  418
+UVM_WARNING :    1
+UVM_ERROR :    0
+UVM_FATAL :    0
+$finish called from file "/tools/uvm-1.2/src/base/uvm_root.svh", line 527.
+$finish at simulation time 98000000
+           V C S   S i m u l a t i o n   R e p o r t

@@ -1,0 +1,131 @@
+OpenSTA 2.5.0  (example report after ECO, generated for VLSI Toolkit)
+
+Startpoint: u_alu/a_reg[31] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_alu/y_reg[31] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: max
+
+            4.86   data arrival time
+
+   5.00    5.00   clock core_clk (rise edge)
+            4.89   data required time
+---------------------------------------------------------
+            0.03   slack (MET)
+
+
+Startpoint: u_alu/a_reg[30] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_alu/y_reg[31] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: max
+
+            4.90   data arrival time
+
+   5.00    5.00   clock core_clk (rise edge)
+            4.89   data required time
+---------------------------------------------------------
+           -0.01   slack (VIOLATED)
+
+
+Startpoint: u_alu/b_reg[7] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_alu/y_reg[30] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: max
+
+            4.88   data arrival time
+
+   5.00    5.00   clock core_clk (rise edge)
+            4.90   data required time
+---------------------------------------------------------
+            0.02   slack (MET)
+
+
+Startpoint: u_fifo/rptr_reg[2] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_fifo/dout_reg[15] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: max
+
+            4.71   data arrival time
+
+   5.00    5.00   clock core_clk (rise edge)
+            4.91   data required time
+---------------------------------------------------------
+            0.20   slack (MET)
+
+
+Startpoint: u_cnt/count_reg[3] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_cnt/count_reg[7] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: max
+
+            5.02   data arrival time
+
+   5.00    5.00   clock core_clk (rise edge)
+            4.91   data required time
+---------------------------------------------------------
+           -0.11   slack (VIOLATED)
+
+
+Startpoint: in_valid (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_ctrl/state_reg[1] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: max
+
+            1.95   data arrival time
+
+   5.00    5.00   clock core_clk (rise edge)
+            3.40   data required time
+---------------------------------------------------------
+            1.45   slack (MET)
+
+
+Startpoint: u_uart/baud_reg[4] (rising edge-triggered flip-flop clocked by uart_clk)
+Endpoint: u_uart/tick_reg (rising edge-triggered flip-flop clocked by uart_clk)
+Path Group: uart_clk
+Path Type: max
+
+            7.30   data arrival time
+
+  20.00   20.00   clock uart_clk (rise edge)
+           19.88   data required time
+---------------------------------------------------------
+           12.58   slack (MET)
+
+
+Startpoint: u_fifo/wptr_reg[0] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_fifo/mem_reg[3][0] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: min
+
+            0.11   data arrival time
+
+   0.00    0.00   clock core_clk (rise edge)
+            0.09   data required time
+---------------------------------------------------------
+            0.03   slack (MET)
+
+
+Startpoint: u_cnt/count_reg[0] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_cnt/count_reg[0] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: min
+
+            0.14   data arrival time
+
+   0.00    0.00   clock core_clk (rise edge)
+            0.07   data required time
+---------------------------------------------------------
+            0.07   slack (MET)
+
+
+Startpoint: u_ctrl/state_reg[0] (rising edge-triggered flip-flop clocked by core_clk)
+Endpoint: u_ctrl/state_reg[1] (rising edge-triggered flip-flop clocked by core_clk)
+Path Group: core_clk
+Path Type: min
+
+            0.21   data arrival time
+
+   0.00    0.00   clock core_clk (rise edge)
+            0.07   data required time
+---------------------------------------------------------
+            0.14   slack (MET)
+

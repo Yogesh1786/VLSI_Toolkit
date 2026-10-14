@@ -1,0 +1,50 @@
+****************************************
+Report : power
+        -hierarchy
+Design : uart_top
+Version: T-2022.03-SP4 (example report for VLSI Toolkit)
+****************************************
+
+Library(s) Used:  sky130_fd_sc_hd__tt_025C_1v80
+
+Operating Conditions: tt_025C_1v80   Library: sky130_fd_sc_hd__tt_025C_1v80
+
+Global Operating Voltage = 1.8
+Power-specific unit information :
+    Voltage Units = 1V
+    Capacitance Units = 1.000000pf
+    Time Units = 1ns
+    Dynamic Power Units = 1mW    (derived from V,C,T units)
+    Leakage Power Units = 1nW
+
+  Cell Internal Power  =   1.4325 mW   (61%)
+  Net Switching Power  =   0.9157 mW   (39%)
+                         ---------
+Total Dynamic Power    =   2.3482 mW  (100%)
+
+Cell Leakage Power     =  41.2310 uW
+
+                 Internal         Switching           Leakage            Total
+Power Group      Power            Power               Power              Power   (   %    )  Attrs
+--------------------------------------------------------------------------------------------------
+io_pad             0.0000            0.0000            0.0000            0.0000  (   0.00%)
+memory             0.0000            0.0000            0.0000            0.0000  (   0.00%)
+black_box          0.0000            0.0000            0.0000            0.0000  (   0.00%)
+clock_network      0.6120            0.3840        1.9200e+03            0.9979  (  41.77%)
+register           0.5310            0.1270        1.6240e+04            0.6742  (  28.22%)
+sequential         0.0000            0.0000            0.0000            0.0000  (   0.00%)
+combinational      0.2895            0.4047        2.3071e+04            0.7173  (  30.02%)
+--------------------------------------------------------------------------------------------------
+Total              1.4325 mW         0.9157 mW     4.1231e+04 nW         2.3894 mW
+
+
+                                      Switch   Int      Leak     Total
+Hierarchy                             Power    Power    Power    Power    %
+--------------------------------------------------------------------------------
+uart_top                              0.9157   1.4325   0.0412   2.3894  100.0
+  u_rx_fifo (sync_fifo)               0.3420   0.5810   0.0168   0.9398   39.3
+  u_tx_fifo (sync_fifo)               0.2980   0.5120   0.0168   0.8268   34.6
+  u_rx (uart_rx)                      0.1120   0.1530   0.0031   0.2681   11.2
+  u_tx (uart_tx)                      0.0890   0.1210   0.0028   0.2128    8.9
+  u_baud (baud_gen)                   0.0610   0.0590   0.0011   0.1211    5.1
+1

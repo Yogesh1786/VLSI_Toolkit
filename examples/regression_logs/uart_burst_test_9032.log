@@ -1,0 +1,17 @@
+Chronologic VCS simulator copyright 1991-2025
+Command: ./simv +UVM_TESTNAME=uart_burst_test +ntb_random_seed=9032 -l uart_burst_test_9032.log
+UVM_INFO @ 0: reporter [RNTST] Running test uart_burst_test...
+UVM_INFO /proj/tb/env/uart_env.sv(88) @ 0: uvm_test_top.env [ENV] Build phase complete
+UVM_ERROR /proj/tb/env/uart_scoreboard.sv(212) @ 12870: uvm_test_top.env.sb [SB_MISMATCH] Data mismatch: expected 0xFF got 0x7F
+UVM_INFO /proj/tb/env/uart_scoreboard.sv(140) @ 98000: uvm_test_top.env.sb [SB] Checked 412 transactions
+
+--- UVM Report Summary ---
+
+** Report counts by severity
+UVM_INFO :  418
+UVM_WARNING :    1
+UVM_ERROR :    1
+UVM_FATAL :    0
+$finish called from file "/tools/uvm-1.2/src/base/uvm_root.svh", line 527.
+$finish at simulation time 98000000
+           V C S   S i m u l a t i o n   R e p o r t

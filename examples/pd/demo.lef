@@ -1,0 +1,107 @@
+# Example LEF (sky130-like sizes) for VLSI Toolkit
+VERSION 5.8 ;
+UNITS
+  DATABASE MICRONS 1000 ;
+END UNITS
+
+SITE unithd
+  CLASS CORE ;
+  SIZE 0.46 BY 2.72 ;
+END unithd
+
+MACRO sky130_fd_sc_hd__inv_2
+  CLASS CORE ;
+  SIZE 1.38 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__inv_2
+
+MACRO sky130_fd_sc_hd__buf_4
+  CLASS CORE ;
+  SIZE 2.76 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__buf_4
+
+MACRO sky130_fd_sc_hd__nand2_1
+  CLASS CORE ;
+  SIZE 1.38 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__nand2_1
+
+MACRO sky130_fd_sc_hd__nor2_1
+  CLASS CORE ;
+  SIZE 1.38 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__nor2_1
+
+MACRO sky130_fd_sc_hd__a21oi_1
+  CLASS CORE ;
+  SIZE 2.30 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__a21oi_1
+
+MACRO sky130_fd_sc_hd__xor2_1
+  CLASS CORE ;
+  SIZE 4.14 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__xor2_1
+
+MACRO sky130_fd_sc_hd__mux2_1
+  CLASS CORE ;
+  SIZE 4.14 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__mux2_1
+
+MACRO sky130_fd_sc_hd__dfrtp_1
+  CLASS CORE ;
+  SIZE 9.20 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__dfrtp_1
+
+MACRO sky130_fd_sc_hd__dfxtp_2
+  CLASS CORE ;
+  SIZE 8.74 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__dfxtp_2
+
+MACRO sky130_fd_sc_hd__dlxtp_1
+  CLASS CORE ;
+  SIZE 5.98 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__dlxtp_1
+
+MACRO sky130_fd_sc_hd__clkbuf_8
+  CLASS CORE ;
+  SIZE 5.52 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__clkbuf_8
+
+MACRO sky130_fd_sc_hd__dlygate4sd3_1
+  CLASS CORE ;
+  SIZE 3.68 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__dlygate4sd3_1
+
+MACRO sky130_fd_sc_hd__tapvpwrvgnd_1
+  CLASS CORE WELLTAP ;
+  SIZE 0.46 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__tapvpwrvgnd_1
+
+MACRO sky130_fd_sc_hd__decap_4
+  CLASS CORE ;
+  SIZE 1.84 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__decap_4
+
+MACRO sky130_fd_sc_hd__fill_1
+  CLASS CORE SPACER ;
+  SIZE 0.46 BY 2.72 ;
+  SITE unithd ;
+END sky130_fd_sc_hd__fill_1
+
+MACRO sram_64x32
+  CLASS BLOCK ;
+  SIZE 60.00 BY 48.96 ;
+END sram_64x32
+
+END LIBRARY
