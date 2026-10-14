@@ -44,9 +44,9 @@ METRIC_INFO = {  # label, unit, better ("up" / "down"), group
 
 
 def hosted():
-    """True when running as a public web service (Vercel sets VERCEL=1; set VT_HOSTED=1 for other hosts).
+    """True when running as a public web service (set automatically by Vercel and Render; VT_HOSTED=1 elsewhere).
     Hosted mode only shows the bundled examples: visitors must not open folders on the server."""
-    return bool(os.environ.get("VERCEL") or os.environ.get("VT_HOSTED"))
+    return bool(os.environ.get("VERCEL") or os.environ.get("RENDER") or os.environ.get("VT_HOSTED"))
 
 
 def data_dir():

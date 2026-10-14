@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ArrowDownRight, ArrowUpRight, ChartSpline, Database, Minus, Sparkles, Trash2 } from "lucide-react";
-import { getJSON, postJSON } from "../lib/api";
+import { getJSON, postJSON, request } from "../lib/api";
 import { useWorkspace } from "../lib/workspace";
 import { DataTable } from "../components/DataTable";
 import { Alert, Badge, Button, Card, EmptyState, KpiGrid, LoadingBlock, PageHeader, Select } from "../components/ui";
@@ -114,7 +114,7 @@ export default function Trends() {
           {hasDemo && (
             <Alert tone="info" title="Demo data is shown">
               Points labelled “(demo)” are generated examples. <button className="font-medium text-brand hover:underline"
-                onClick={() => act(() => fetch(`/api/history?workspace=${encodeURIComponent(target!)}&demo_only=true`, { method: "DELETE" }))}>Remove demo data</button>
+                onClick={() => act(() => request(`/api/history?workspace=${encodeURIComponent(target!)}&demo_only=true`, { method: "DELETE" }))}>Remove demo data</button>
             </Alert>
           )}
           <KpiGrid items={[
@@ -146,7 +146,7 @@ export default function Trends() {
               { key: "axi", header: "AXI err", align: "right", value: (s) => s.metrics.axi_errors, render: (s) => s.metrics.axi_errors ?? "–" },
               { key: "del", header: "", render: (s) => (
                 <button title="Delete this run" className="text-faint hover:text-bad"
-                  onClick={() => act(() => fetch(`/api/history/${s.id}`, { method: "DELETE" }))}><Trash2 className="size-4" /></button>) },
+                  onClick={() => act(() => request(`/api/history/${s.id}`, { method: "DELETE" }))}><Trash2 className="size-4" /></button>) },
             ]} />
           </Card>
         </>

@@ -7,13 +7,22 @@ export type SourceFile = { name: string; text: string };
 export const REQUIRED_API_VERSION = 5;
 export const API_START_COMMAND = "python -m uvicorn api.main:app --port 8000 --reload";
 
-const OFFLINE_MESSAGE = `Cannot reach the API server. Start it with: ${API_START_COMMAND}`;
+/**
+ * Where the API lives. Empty = same address as the web app (local use, Vite proxy).
+ * For a separately hosted backend (e.g. Render) set VITE_API_URL at build time:
+ *   VITE_API_URL=https://vlsi-toolkit-api.onrender.com
+ */
+export const API_BASE = ((import.meta.env.VITE_API_URL as string | undefined) ?? "").trim().replace(/\/+$/, "");
 
-/** fetch() that turns a refused connection into a helpful message. */
-async function request(url: string, init?: RequestInit) {
+const OFFLINE_MESSAGE = API_BASE
+  ? `Cannot reach the API server at ${API_BASE}. A free Render server sleeps when idle and needs up to a minute to wake up: wait a moment and try again.`
+  : `Cannot reach the API server. Start it with: ${API_START_COMMAND}`;
+
+/** fetch() that adds the API address and turns a refused connection into a helpful message. */
+export async function request(url: string, init?: RequestInit) {
   let r: Response;
   try {
-    r = await fetch(url, init);
+    r = await fetch(url.startsWith("/api") ? API_BASE + url : url, init);
   } catch (e) {
     if ((e as Error).name === "AbortError") throw e;
     throw new Error(OFFLINE_MESSAGE);

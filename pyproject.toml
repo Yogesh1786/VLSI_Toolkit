@@ -6,10 +6,3 @@ requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.141",          # API server; the core toolkit itself needs only the standard library
 ]
-
-# ---- Vercel deployment (see DEPLOY.md)
-[tool.vercel]
-entrypoint = "api.main:app"    # the FastAPI app in api/main.py
-
-[tool.vercel.scripts]
-build = "npm --prefix web ci && npm --prefix web run build"   # builds the React app into web/dist

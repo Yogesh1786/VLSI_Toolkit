@@ -1,76 +1,114 @@
-# Deploying VLSI Toolkit (GitHub → Vercel)
-
-The whole app (React frontend **and** FastAPI backend) deploys as **one Vercel project**:
+# Deploying VLSI Toolkit: frontend on Vercel, backend on Render
 
 ```text
-                         ┌──────────────── Vercel project ────────────────┐
-Browser ── https://… ──► │  CDN: React app (web/dist)                     │
-                         │  /api/*  ──►  Python function: api/main.py     │
-                         │              (FastAPI + vlsi_toolkit/)         │
-                         └────────────────────────────────────────────────┘
+Browser ──► https://vlsi-toolkit.vercel.app            (Vercel: React app from web/)
+               │  every /api/... call goes to
+               ▼
+            https://vlsi-toolkit-api.onrender.com      (Render: FastAPI from api/ + vlsi_toolkit/)
 ```
 
-Same address for both, so the frontend needs no API URL setting.
+Two settings connect the two halves:
 
-| File                | What it tells Vercel                                                                           |
-| ------------------- | ---------------------------------------------------------------------------------------------- |
-| `pyproject.toml`    | Python dependencies, the app entrypoint (`api.main:app`), and the build command for the React app |
-| `.python-version`   | Use Python 3.12                                                                                |
-| `vercel.json`       | Function settings: 30 s timeout, leave tests and `node_modules` out of the bundle              |
-| `requirements.txt`  | Only what the server needs (heavy optional extras are in `requirements-extras.txt`)            |
+| Setting                         | Set on   | Value                                     | Why                                                    |
+| ------------------------------- | -------- | ----------------------------------------- | ------------------------------------------------------ |
+| `VITE_API_URL`                  | Vercel   | the Render address                        | tells the React app where the API is                   |
+| `CORS_ORIGINS`                  | Render   | the Vercel address                        | lets the browser accept answers from another address   |
+
+Files used: `render.yaml` + `requirements.txt` + `.python-version` (Render), `web/vercel.json` (Vercel).
+
+---
 
 ## Step 1: push the code to GitHub
 
-1. On https://github.com/new create a repository, e.g. **`VLSI_Toolkit`**.
-   Do **not** tick "Add a README" or ".gitignore": the project already has them.
-2. In a terminal in the `VLSI_Toolkit` folder:
+1. Create an **empty** repository at https://github.com/new, e.g. `VLSI_Toolkit`
+   (do not add a README or .gitignore).
+2. In the `VLSI_Toolkit` folder:
 
    ```bash
-   git init -b main          # once: makes this folder its own repository
-   git add .
-   git commit -m "VLSI Toolkit: CLI, API and React web app"
    git remote add origin https://github.com/Yogesh1786/VLSI_Toolkit.git
    git push -u origin main
    ```
 
-   The first push opens a browser window to sign in to GitHub (Git Credential Manager).
+Later changes: `git add .` → `git commit -m "..."` → `git push`. Both Render and Vercel redeploy automatically.
 
-Later changes: `git add .` → `git commit -m "what changed"` → `git push`. Vercel redeploys automatically.
+## Step 2: backend on Render (do this first, Vercel needs its address)
 
-## Step 2: import the repository in Vercel
+1. Sign up at https://render.com with **GitHub**.
+2. **New + → Blueprint** → connect GitHub → pick `VLSI_Toolkit`.
+   Render reads `render.yaml` and shows one service, `vlsi-toolkit-api` (free plan, Singapore).
+3. It asks for **`CORS_ORIGINS`**. You don't know the Vercel address yet: type `http://localhost:5173` for now.
+4. Click **Apply** / **Deploy Blueprint**. The first build takes 2–4 minutes.
+5. Copy the service address from the top of the page, e.g. `https://vlsi-toolkit-api.onrender.com`.
+   Check it: open `https://vlsi-toolkit-api.onrender.com/api/health` and you should see `"ok":true,"hosted":true`.
+   The API documentation is at `/docs`.
 
-1. Sign in at https://vercel.com with **Continue with GitHub**.
-2. **Add New… → Project**, pick `VLSI_Toolkit`, click **Import**
-   (if it is not listed: *Adjust GitHub App Permissions* and allow the repository).
-3. Settings:
-   - **Framework Preset:** `FastAPI` (detected automatically)
-   - **Root Directory:** `./`
-   - Build command, output directory, install command: leave the defaults (they come from `pyproject.toml`)
-   - Environment variables: none needed
-4. Click **Deploy**. After 1–2 minutes you get `https://vlsi-toolkit-xxxx.vercel.app`.
+<details><summary>Without the Blueprint (manual setup)</summary>
 
-Check it: open `/api/health` on that address. It should show `"ok": true` and `"hosted": true`.
+**New + → Web Service** → pick the repository, then:
+
+| Field            | Value                                                     |
+| ---------------- | --------------------------------------------------------- |
+| Language         | Python 3                                                  |
+| Branch           | `main`                                                    |
+| Root Directory   | *(empty)*                                                 |
+| Build Command    | `pip install -r requirements.txt`                         |
+| Start Command    | `uvicorn api.main:app --host 0.0.0.0 --port $PORT`        |
+| Instance Type    | Free                                                      |
+| Health Check Path (Advanced) | `/api/health`                                 |
+| Environment Variable | `CORS_ORIGINS` = your Vercel address                  |
+
+</details>
+
+## Step 3: frontend on Vercel
+
+1. Sign in at https://vercel.com with **GitHub** → **Add New… → Project** → import `VLSI_Toolkit`.
+2. Settings:
+   - **Root Directory:** click *Edit* and choose **`web`** (important)
+   - **Framework Preset:** Vite (detected)
+   - Build / Output: leave the defaults (`npm run build`, `dist`)
+   - **Environment Variables:** `VITE_API_URL` = `https://vlsi-toolkit-api.onrender.com` (your Render address, no `/` at the end)
+3. **Deploy**. Copy your address, e.g. `https://vlsi-toolkit.vercel.app`.
+
+## Step 4: connect them
+
+1. Render → `vlsi-toolkit-api` → **Environment** → edit `CORS_ORIGINS` →
+   `https://vlsi-toolkit.vercel.app` → **Save, rebuild and deploy**.
+   Several addresses are allowed, separated by commas (no spaces needed, no `/` at the end).
+2. Open the Vercel address. The tools should load the examples and show results.
+
+Optional, for Vercel *preview* deployments (each branch or pull request gets its own address): add
+`CORS_ORIGIN_REGEX` = `https://vlsi-toolkit-.*\.vercel\.app` on Render.
+
+> `VITE_API_URL` is baked in when the React app is **built**. If you change it on Vercel, redeploy
+> (Deployments → ⋯ → Redeploy) for it to take effect.
+
+---
 
 ## What is different online
 
-| Feature                     | On your computer                  | On Vercel                                                                  |
-| --------------------------- | --------------------------------- | -------------------------------------------------------------------------- |
-| Tools with Example / Upload | ✔                                 | ✔ (uploads up to about **4 MB** per request, Vercel's limit)               |
-| Project Workspace           | Open any folder on your computer  | Shows the bundled `examples/` project only. Opening folders is blocked, so visitors cannot read files on the server |
-| Trends / saved runs         | Kept in `~/.vlsi_toolkit/`        | Kept in the server's temp folder: shared by all visitors and **lost on every redeploy or restart** |
-| ngspice sweep `--run`       | If ngspice is installed           | Not available                                                              |
+| Feature                      | On your computer                | Online                                                                 |
+| ---------------------------- | ------------------------------- | ---------------------------------------------------------------------- |
+| Tools with Example / Upload  | ✔                               | ✔                                                                      |
+| Project Workspace            | Open any folder                 | Bundled `examples/` only. Opening folders is blocked, so visitors can't read files on the server |
+| Trends / saved runs          | Kept in `~/.vlsi_toolkit/`      | Temporary: shared by all visitors, **lost on every deploy or restart** |
+| ngspice sweep `--run`        | If ngspice is installed         | Not available                                                          |
 
-Hosted mode switches on automatically on Vercel (`VERCEL=1`). On another host, set `VT_HOSTED=1`.
+Hosted mode switches on automatically on Render (`RENDER` variable) and Vercel. On other hosts set `VT_HOSTED=1`.
 
-> The deployed site is **public**: anyone with the link can use it. Don't upload company RTL, reports or
-> netlists to it; use the local app (`start_app.bat`) for real project data.
-> To limit access, turn on *Vercel Authentication* under Project → Settings → Deployment Protection.
+**Render free plan:** the server **sleeps after 15 minutes without requests**. The next visitor waits up to
+about a minute while it wakes up (the app shows "Cannot reach the API server… wait a moment"; it
+retries every 15 s by itself). Free instances have 0.1 CPU and 512 MB RAM, enough for this toolkit.
+
+> The site is **public**. Don't upload company RTL, reports or netlists to it. Use the local app
+> (`start_app.bat`) for real project data.
 
 ## Troubleshooting
 
-| Symptom                               | Fix                                                                                                 |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Build log: `npm: command not found` or the React build fails | Set **Build Command** in Project → Settings → Build & Development to `npm --prefix web ci && npm --prefix web run build` |
-| Page loads but every tool says *API server not running* | Open `/api/health`. If it is a 404 or 500, check the **Functions** logs in the Vercel dashboard |
-| `413 Payload Too Large`               | The uploaded file is over Vercel's ~4.5 MB request limit; use the local app for big VCD/DEF files   |
-| *API server is outdated* banner       | The browser has an old page cached: hard-refresh (Ctrl+F5)                                          |
+| Symptom                                               | Fix                                                                                       |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Browser console: *blocked by CORS policy*             | `CORS_ORIGINS` on Render must be exactly the Vercel address (`https://…vercel.app`, no `/` at the end). Save → redeploy |
+| Every tool says *Cannot reach the API server at …*    | Render is waking up (wait 1 min), or `VITE_API_URL` is wrong. Open `<render address>/api/health` directly |
+| Tools call `vercel.app/api/...` and get 404           | `VITE_API_URL` was not set when the site was built: set it and **Redeploy**               |
+| Refreshing a page such as `/lint` gives 404 on Vercel | Root Directory must be `web` so `web/vercel.json` (page fallback) is used                 |
+| Render build fails on the Python version              | `.python-version` sets 3.12; check the build log, or set `PYTHON_VERSION` to a full version such as `3.12.8` |
+| *API server is outdated* banner                       | Render is still running the old version: wait for its deploy to finish, then refresh      |

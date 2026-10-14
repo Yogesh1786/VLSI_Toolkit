@@ -5,7 +5,7 @@ The core runs on **plain Python 3.10+, with no extra installs**.
 
 **New to Python?** Start with [LEARN_PYTHON.md](LEARN_PYTHON.md), an 8-week plan built around this toolkit's own code.
 
-**Put it online?** [DEPLOY.md](DEPLOY.md) explains GitHub + Vercel step by step.
+**Put it online?** [DEPLOY.md](DEPLOY.md) explains GitHub, Render (backend) and Vercel (frontend) step by step.
 
 | Area                | Command           | What it does                                                                                                                                                                                          |
 | ------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
