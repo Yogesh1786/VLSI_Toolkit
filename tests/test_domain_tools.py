@@ -12,8 +12,12 @@ from vlsi_toolkit.cli import main
 
 def run_cli(argv):
     """Run the CLI with its printed output hidden; return the exit code."""
-    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+    with (
+        contextlib.redirect_stdout(io.StringIO()),
+        contextlib.redirect_stderr(io.StringIO()),
+    ):
         return main(argv)
+
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 
@@ -25,8 +29,17 @@ class TestLint(unittest.TestCase):
     def test_demo_file_finds_all_planted_bugs(self):
         issues = lint.lint_files([EXAMPLES / "lint_demo.v"])
         found = {i.rule for i in issues}
-        self.assertEqual(found, {"BLOCKING_IN_SEQ", "LATCH_RISK", "CASE_NO_DEFAULT", "SENS_LIST",
-                                 "NONBLOCKING_IN_COMB", "MULTI_DRIVER"})
+        self.assertEqual(
+            found,
+            {
+                "BLOCKING_IN_SEQ",
+                "LATCH_RISK",
+                "CASE_NO_DEFAULT",
+                "SENS_LIST",
+                "NONBLOCKING_IN_COMB",
+                "MULTI_DRIVER",
+            },
+        )
         multi = [i for i in issues if i.rule == "MULTI_DRIVER"]
         self.assertEqual(len(multi), 1)  # 'bits[0]' / 'bits[1]' must NOT be flagged
         self.assertIn("'w'", multi[0].message)
@@ -67,8 +80,10 @@ class TestLint(unittest.TestCase):
 
 class TestRegress(unittest.TestCase):
     def setUp(self):
-        self.results = {r.file.split("\\")[-1].split("/")[-1]: r
-                        for r in regress.analyze_folder(EXAMPLES / "regression_logs")}
+        self.results = {
+            r.file.split("\\")[-1].split("/")[-1]: r
+            for r in regress.analyze_folder(EXAMPLES / "regression_logs")
+        }
 
     def test_statuses(self):
         status = {k: r.status for k, r in self.results.items()}
@@ -76,12 +91,17 @@ class TestRegress(unittest.TestCase):
         self.assertEqual(status["counter_smoke_test.log"], "PASS")
         self.assertEqual(status["uart_burst_test_7781.log"], "FAIL")
         self.assertEqual(status["uart_timeout_test_4242.log"], "FAIL")
-        self.assertEqual(status["fifo_directed_test.log"], "FAIL")  # Questa "# ** Error"
+        self.assertEqual(
+            status["fifo_directed_test.log"], "FAIL"
+        )  # Questa "# ** Error"
         self.assertEqual(status["uart_reset_test_3141.log"], "INCOMPLETE")
 
     def test_counts_test_name_and_seed(self):
         r = self.results["uart_burst_test_7781.log"]
-        self.assertEqual((r.test, r.seed, r.errors, r.fatals, r.warnings), ("uart_burst_test", "7781", 2, 0, 1))
+        self.assertEqual(
+            (r.test, r.seed, r.errors, r.fatals, r.warnings),
+            ("uart_burst_test", "7781", 2, 0, 1),
+        )
         self.assertEqual(self.results["uart_timeout_test_4242.log"].fatals, 1)
 
     def test_signatures_group_same_bug(self):
@@ -91,14 +111,20 @@ class TestRegress(unittest.TestCase):
         self.assertIn("SB_MISMATCH", top_sig)
 
     def test_signature_normalization(self):
-        a = regress.error_signature("UVM_ERROR /a/b.sv(12) @ 100: uvm_test_top.env [X] got 0x1F at 55")
-        b = regress.error_signature("UVM_ERROR /a/b.sv(12) @ 999: uvm_test_top.env [X] got 0xAA at 7")
+        a = regress.error_signature(
+            "UVM_ERROR /a/b.sv(12) @ 100: uvm_test_top.env [X] got 0x1F at 55"
+        )
+        b = regress.error_signature(
+            "UVM_ERROR /a/b.sv(12) @ 999: uvm_test_top.env [X] got 0xAA at 7"
+        )
         self.assertEqual(a, b)
 
 
 class TestPd(unittest.TestCase):
     def setUp(self):
-        self.d, self.lef = pd_analyzer.parse_files(EXAMPLES / "pd" / "demo.def", [EXAMPLES / "pd" / "demo.lef"])
+        self.d, self.lef = pd_analyzer.parse_files(
+            EXAMPLES / "pd" / "demo.def", [EXAMPLES / "pd" / "demo.lef"]
+        )
 
     def test_parse(self):
         self.assertEqual(self.d.design, "uart_top")
@@ -130,7 +156,9 @@ class TestPd(unittest.TestCase):
         self.assertEqual(c("sram_64x32", self.lef), "Macro")
 
     def test_polygon_die(self):
-        d = pd_analyzer.parse_def("DIEAREA ( 0 0 ) ( 0 100 ) ( 50 100 ) ( 50 50 ) ( 100 50 ) ( 100 0 ) ;")
+        d = pd_analyzer.parse_def(
+            "DIEAREA ( 0 0 ) ( 0 100 ) ( 50 100 ) ( 50 50 ) ( 100 50 ) ( 100 0 ) ;"
+        )
         self.assertEqual(d.die_area_dbu, 100 * 50 + 50 * 50)  # L-shaped die
 
 
@@ -146,7 +174,9 @@ class TestSpice(unittest.TestCase):
     def test_inverter_chain(self):
         nl = spice.parse_netlist_file(EXAMPLES / "analog" / "inverter_chain.sp")
         kinds = sorted(d.kind for d in nl.devices)
-        self.assertEqual(kinds, ["c", "m", "m", "v", "v", "x", "x", "x"])  # .control block ignored
+        self.assertEqual(
+            kinds, ["c", "m", "m", "v", "v", "x", "x", "x"]
+        )  # .control block ignored
         mos = {r["name"]: r for r in spice.mosfet_table(nl)}
         self.assertAlmostEqual(mos["M1"]["w"], 0.84e-6)
         self.assertAlmostEqual(mos["M1"]["w_over_l"], 5.6)
@@ -160,8 +190,12 @@ class TestSpice(unittest.TestCase):
             self.assertIn(f"'{node}'", text)
 
     def test_floating_gate(self):
-        nl = spice.parse_netlist("title\nM1 d g 0 0 nch W=1u L=1u\nM2 d2 g 0 0 nch W=1u L=1u\nR1 d d2 1k\n.op\n")
-        self.assertTrue(any("floating gate" in i for i in spice.connectivity_issues(nl)))
+        nl = spice.parse_netlist(
+            "title\nM1 d g 0 0 nch W=1u L=1u\nM2 d2 g 0 0 nch W=1u L=1u\nR1 d d2 1k\n.op\n"
+        )
+        self.assertTrue(
+            any("floating gate" in i for i in spice.connectivity_issues(nl))
+        )
 
     def test_sweep(self):
         self.assertEqual(spice.parse_sweep_values("1.6:2.0:0.2"), ["1.6", "1.8", "2"])
@@ -175,12 +209,16 @@ class TestSpice(unittest.TestCase):
     def test_measure(self):
         waves = spice.load_waveforms(EXAMPLES / "analog" / "inverter_tran.csv")
         vin = spice.measure(waves, "in")
-        self.assertAlmostEqual(vin["rise_time"], 40e-12, delta=1e-12)  # 10-90% of a 50 ps edge
+        self.assertAlmostEqual(
+            vin["rise_time"], 40e-12, delta=1e-12
+        )  # 10-90% of a 50 ps edge
         self.assertAlmostEqual(vin["period"], 2e-9, delta=1e-12)
         self.assertAlmostEqual(vin["duty"], 0.525, places=3)
         out = spice.measure(waves, "v(out)", ref="in", vdd=1.8)
         self.assertTrue(30e-12 < out["tpd"] < 60e-12)
-        self.assertGreater(out["rise_time"], out["fall_time"])  # weaker pull-up in the model
+        self.assertGreater(
+            out["rise_time"], out["fall_time"]
+        )  # weaker pull-up in the model
 
     def test_wrdata_format(self):
         with tempfile.TemporaryDirectory() as d:
@@ -193,17 +231,66 @@ class TestSpice(unittest.TestCase):
 class TestCliDomain(unittest.TestCase):
     def test_commands(self):
         with tempfile.TemporaryDirectory() as d:
-            self.assertEqual(run_cli(["lint", str(EXAMPLES / "lint_demo.v")]), 1)  # has an ERROR
+            self.assertEqual(
+                run_cli(["lint", str(EXAMPLES / "lint_demo.v")]), 1
+            )  # has an ERROR
             self.assertEqual(run_cli(["lint", str(EXAMPLES / "counter.v")]), 0)
-            self.assertEqual(run_cli(["regress", str(EXAMPLES / "regression_logs"), "--html", str(Path(d) / "r.html")]), 2)
+            self.assertEqual(
+                run_cli(
+                    [
+                        "regress",
+                        str(EXAMPLES / "regression_logs"),
+                        "--html",
+                        str(Path(d) / "r.html"),
+                    ]
+                ),
+                2,
+            )
             self.assertTrue((Path(d) / "r.html").exists())
-            self.assertEqual(run_cli(["pd", str(EXAMPLES / "pd" / "demo.def"), "--lef", str(EXAMPLES / "pd" / "demo.lef")]), 0)
-            self.assertEqual(run_cli(["spice", "info", str(EXAMPLES / "analog" / "buggy_bias.sp")]), 0)
-            self.assertEqual(run_cli(["spice", "sweep", str(EXAMPLES / "analog" / "inverter_chain.sp"),
-                                   "--param", "VDD=1.2,1.8", "-o", d]), 0)
+            self.assertEqual(
+                run_cli(
+                    [
+                        "pd",
+                        str(EXAMPLES / "pd" / "demo.def"),
+                        "--lef",
+                        str(EXAMPLES / "pd" / "demo.lef"),
+                    ]
+                ),
+                0,
+            )
+            self.assertEqual(
+                run_cli(["spice", "info", str(EXAMPLES / "analog" / "buggy_bias.sp")]),
+                0,
+            )
+            self.assertEqual(
+                run_cli(
+                    [
+                        "spice",
+                        "sweep",
+                        str(EXAMPLES / "analog" / "inverter_chain.sp"),
+                        "--param",
+                        "VDD=1.2,1.8",
+                        "-o",
+                        d,
+                    ]
+                ),
+                0,
+            )
             self.assertEqual(len(list(Path(d).glob("*.sp"))), 2)
-            self.assertEqual(run_cli(["spice", "measure", str(EXAMPLES / "analog" / "inverter_tran.csv"),
-                                   "-s", "out", "--ref", "in"]), 0)
+            self.assertEqual(
+                run_cli(
+                    [
+                        "spice",
+                        "measure",
+                        str(EXAMPLES / "analog" / "inverter_tran.csv"),
+                        "-s",
+                        "out",
+                        "--ref",
+                        "in",
+                    ]
+                ),
+                0,
+            )
 
 
 if __name__ == "__main__":

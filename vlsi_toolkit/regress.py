@@ -22,14 +22,18 @@ from pathlib import Path
 from .common import format_table
 
 _ERROR_RES = [
-    re.compile(r"^\s*UVM_(ERROR|FATAL)\b(?!\s*:\s*\d)"),  # UVM message (not the summary)
+    re.compile(
+        r"^\s*UVM_(ERROR|FATAL)\b(?!\s*:\s*\d)"
+    ),  # UVM message (not the summary)
     re.compile(r"^\s*#?\s*\*\*\s*(Error|Fatal)\b"),  # Questa / ModelSim ("# ** Error")
     re.compile(r"^\s*\*([EF]),\w+"),  # Xcelium
     re.compile(r"^\s*(Error|Fatal)-\["),  # VCS
     re.compile(r"\b(ERROR|FATAL)\b\s*[:\-\]]"),  # $error / $display("ERROR: ...")
     re.compile(r"^\s*(Error|Fatal):"),
 ]
-_WARNING_RE = re.compile(r"^\s*#?\s*(UVM_WARNING\b(?!\s*:\s*\d)|\*\*\s*Warning\b|\*W,\w+|Warning-\[|WARNING\s*:)")
+_WARNING_RE = re.compile(
+    r"^\s*#?\s*(UVM_WARNING\b(?!\s*:\s*\d)|\*\*\s*Warning\b|\*W,\w+|Warning-\[|WARNING\s*:)"
+)
 _UVM_SUMMARY_RE = re.compile(r"^\s*UVM_(ERROR|FATAL|WARNING)\s*:\s*(\d+)", re.M)
 _PASS_RE = re.compile(r"\bTEST\s*(?:CASE\s*)?PASS(?:ED)?\b", re.I)
 _FAIL_RE = re.compile(r"\bTEST\s*(?:CASE\s*)?FAIL(?:ED)?\b", re.I)
@@ -38,8 +42,13 @@ _DONE_RE = re.compile(
     r"Simulation\s+(?:stopped|ended)|V C S\s+S i m u l a t i o n",
     re.I,
 )
-_TESTNAME_RES = [re.compile(r"\+UVM_TESTNAME=(\w+)"), re.compile(r"Running test\s+(\w+)")]
-_SEED_RE = re.compile(r"(?:sv_seed|ntb_random_seed|svseed|\bseed)\s*[=:]?\s*(\d+)", re.I)
+_TESTNAME_RES = [
+    re.compile(r"\+UVM_TESTNAME=(\w+)"),
+    re.compile(r"Running test\s+(\w+)"),
+]
+_SEED_RE = re.compile(
+    r"(?:sv_seed|ntb_random_seed|svseed|\bseed)\s*[=:]?\s*(\d+)", re.I
+)
 
 
 @dataclass
@@ -68,7 +77,11 @@ class TestResult:
 def error_signature(message):
     """Normalize an error message so that the same bug gives the same text."""
     s = message.strip()
-    s = re.sub(r"^\s*#?\s*(UVM_(ERROR|FATAL)|\*\*\s*(Error|Fatal):?|\*[EF],\w+:?|(ERROR|FATAL|Error|Fatal)\s*:?)\s*", "", s)
+    s = re.sub(
+        r"^\s*#?\s*(UVM_(ERROR|FATAL)|\*\*\s*(Error|Fatal):?|\*[EF],\w+:?|(ERROR|FATAL|Error|Fatal)\s*:?)\s*",
+        "",
+        s,
+    )
     s = re.sub(r"\S*[/\\]\S*\(\d+\)", "", s)  # file.sv(123)
     s = re.sub(r"@\s*[\d.]+\s*\w*:?", "", s)  # @ 1500ns:
     s = re.sub(r"\buvm_test_top(\.\w+)*", "<path>", s)
@@ -117,7 +130,9 @@ def analyze_text(text, name="log"):
             break
     seed_m = _SEED_RE.search(text)
 
-    finished = bool(_DONE_RE.search(text) or _PASS_RE.search(text) or _FAIL_RE.search(text))
+    finished = bool(
+        _DONE_RE.search(text) or _PASS_RE.search(text) or _FAIL_RE.search(text)
+    )
     if errors or fatals or _FAIL_RE.search(text):
         status = "FAIL"
     elif not finished:
@@ -126,8 +141,19 @@ def analyze_text(text, name="log"):
         status = "PASS"
     if status == "INCOMPLETE" and not first_error:
         lines = [l.strip() for l in text.splitlines() if l.strip()]
-        first_error = "no end-of-simulation marker; last line: " + (lines[-1][:80] if lines else "<empty log>")
-    return TestResult(name, test, seed_m.group(1) if seed_m else "", status, errors, fatals, warnings, first_error)
+        first_error = "no end-of-simulation marker; last line: " + (
+            lines[-1][:80] if lines else "<empty log>"
+        )
+    return TestResult(
+        name,
+        test,
+        seed_m.group(1) if seed_m else "",
+        status,
+        errors,
+        fatals,
+        warnings,
+        first_error,
+    )
 
 
 def analyze_folder(folder, pattern="*.log"):
@@ -149,22 +175,42 @@ def report_text(results):
     if not results:
         return "No log files found."
     n = len(results)
-    counts = {s: sum(1 for r in results if r.status == s) for s in ("PASS", "FAIL", "INCOMPLETE")}
+    counts = {
+        s: sum(1 for r in results if r.status == s)
+        for s in ("PASS", "FAIL", "INCOMPLETE")
+    }
     out = [
         f"REGRESSION SUMMARY: {n} tests   PASS {counts['PASS']}   FAIL {counts['FAIL']}   "
         f"INCOMPLETE {counts['INCOMPLETE']}   pass rate {counts['PASS'] / n:.1%}",
         format_table(
             ["Test", "Seed", "Status", "Err", "Fatal", "Warn", "First error"],
-            [[r.test, r.seed, r.status, r.errors, r.fatals, r.warnings, r.short_error[:70]]
-             for r in sorted(results, key=lambda r: (r.status == "PASS", r.test))],
+            [
+                [
+                    r.test,
+                    r.seed,
+                    r.status,
+                    r.errors,
+                    r.fatals,
+                    r.warnings,
+                    r.short_error[:70],
+                ]
+                for r in sorted(results, key=lambda r: (r.status == "PASS", r.test))
+            ],
         ),
     ]
     groups = signatures(results)
     if groups:
         out.append("")
         out.append("FAILURE SIGNATURES (debug the biggest group first)")
-        rows = [[len(rs), sig, ", ".join(f"{r.test}:{r.seed}" if r.seed else r.test for r in rs[:4])
-                 + (" ..." if len(rs) > 4 else "")] for sig, rs in groups.items()]
+        rows = [
+            [
+                len(rs),
+                sig,
+                ", ".join(f"{r.test}:{r.seed}" if r.seed else r.test for r in rs[:4])
+                + (" ..." if len(rs) > 4 else ""),
+            ]
+            for sig, rs in groups.items()
+        ]
         out.append(format_table(["Count", "Signature", "Tests (name:seed)"], rows))
     return "\n".join(out)
 
@@ -172,9 +218,33 @@ def report_text(results):
 def write_csv(results, path):
     with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["test", "seed", "status", "errors", "fatals", "warnings", "first_error", "signature", "log"])
+        w.writerow(
+            [
+                "test",
+                "seed",
+                "status",
+                "errors",
+                "fatals",
+                "warnings",
+                "first_error",
+                "signature",
+                "log",
+            ]
+        )
         for r in results:
-            w.writerow([r.test, r.seed, r.status, r.errors, r.fatals, r.warnings, r.first_error, r.signature, r.file])
+            w.writerow(
+                [
+                    r.test,
+                    r.seed,
+                    r.status,
+                    r.errors,
+                    r.fatals,
+                    r.warnings,
+                    r.first_error,
+                    r.signature,
+                    r.file,
+                ]
+            )
 
 
 def write_html(results, path):

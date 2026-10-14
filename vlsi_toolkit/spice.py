@@ -28,11 +28,31 @@ from .common import format_table
 # Numbers with SPICE suffixes
 # ---------------------------------------------------------------------------
 
-_SUFFIX = [("meg", 1e6), ("mil", 25.4e-6), ("t", 1e12), ("g", 1e9), ("k", 1e3), ("m", 1e-3),
-           ("u", 1e-6), ("n", 1e-9), ("p", 1e-12), ("f", 1e-15), ("a", 1e-18)]
-_NUM_RE = re.compile(r"(?<![\w.])([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z]*)", re.I)
-_OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul, ast.Div: operator.truediv,
-        ast.Pow: operator.pow, ast.USub: operator.neg, ast.UAdd: operator.pos}
+_SUFFIX = [
+    ("meg", 1e6),
+    ("mil", 25.4e-6),
+    ("t", 1e12),
+    ("g", 1e9),
+    ("k", 1e3),
+    ("m", 1e-3),
+    ("u", 1e-6),
+    ("n", 1e-9),
+    ("p", 1e-12),
+    ("f", 1e-15),
+    ("a", 1e-18),
+]
+_NUM_RE = re.compile(
+    r"(?<![\w.])([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)([a-z]*)", re.I
+)
+_OPS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.Pow: operator.pow,
+    ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
+}
 
 
 def _suffix_scale(suffix):
@@ -47,7 +67,9 @@ def _eval_float(node, params):
     if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
         return float(node.value)
     if isinstance(node, ast.BinOp) and type(node.op) in _OPS:
-        return _OPS[type(node.op)](_eval_float(node.left, params), _eval_float(node.right, params))
+        return _OPS[type(node.op)](
+            _eval_float(node.left, params), _eval_float(node.right, params)
+        )
     if isinstance(node, ast.UnaryOp) and type(node.op) in _OPS:
         return _OPS[type(node.op)](_eval_float(node.operand, params))
     if isinstance(node, ast.Name) and node.id.lower() in params:
@@ -61,7 +83,9 @@ def spice_value(text, params=None):
     m = _NUM_RE.fullmatch(s)
     if m:
         return float(m.group(1)) * _suffix_scale(m.group(2))
-    expr = _NUM_RE.sub(lambda mm: repr(float(mm.group(1)) * _suffix_scale(mm.group(2))), s)
+    expr = _NUM_RE.sub(
+        lambda mm: repr(float(mm.group(1)) * _suffix_scale(mm.group(2))), s
+    )
     try:
         return _eval_float(ast.parse(expr, mode="eval").body, params or {})
     except (ValueError, SyntaxError, ZeroDivisionError, TypeError):
@@ -72,7 +96,17 @@ def eng(value, unit=""):
     """1.23e-11 -> '12.3 p' + unit"""
     if value is None:
         return "-"
-    for exp, prefix in ((1e9, "G"), (1e6, "M"), (1e3, "k"), (1, ""), (1e-3, "m"), (1e-6, "u"), (1e-9, "n"), (1e-12, "p"), (1e-15, "f")):
+    for exp, prefix in (
+        (1e9, "G"),
+        (1e6, "M"),
+        (1e3, "k"),
+        (1, ""),
+        (1e-3, "m"),
+        (1e-6, "u"),
+        (1e-9, "n"),
+        (1e-12, "p"),
+        (1e-15, "f"),
+    ):
         if abs(value) >= exp:
             return f"{value / exp:.4g} {prefix}{unit}"
     return f"{value:.3g} {unit}"
@@ -82,11 +116,41 @@ def eng(value, unit=""):
 # Netlist parsing
 # ---------------------------------------------------------------------------
 
-DEVICE_NAMES = {"m": "MOSFET", "r": "Resistor", "c": "Capacitor", "l": "Inductor", "v": "Voltage source",
-                "i": "Current source", "d": "Diode", "q": "BJT", "j": "JFET", "x": "Subckt instance",
-                "e": "VCVS", "g": "VCCS", "f": "CCCS", "h": "CCVS", "b": "Behavioral source", "k": "Coupling"}
-_NODE_COUNT = {"m": 4, "r": 2, "c": 2, "l": 2, "v": 2, "i": 2, "d": 2, "q": 3, "j": 3, "e": 4, "g": 4,
-               "f": 2, "h": 2, "b": 2, "k": 0}
+DEVICE_NAMES = {
+    "m": "MOSFET",
+    "r": "Resistor",
+    "c": "Capacitor",
+    "l": "Inductor",
+    "v": "Voltage source",
+    "i": "Current source",
+    "d": "Diode",
+    "q": "BJT",
+    "j": "JFET",
+    "x": "Subckt instance",
+    "e": "VCVS",
+    "g": "VCCS",
+    "f": "CCCS",
+    "h": "CCVS",
+    "b": "Behavioral source",
+    "k": "Coupling",
+}
+_NODE_COUNT = {
+    "m": 4,
+    "r": 2,
+    "c": 2,
+    "l": 2,
+    "v": 2,
+    "i": 2,
+    "d": 2,
+    "q": 3,
+    "j": 3,
+    "e": 4,
+    "g": 4,
+    "f": 2,
+    "h": 2,
+    "b": 2,
+    "k": 0,
+}
 GROUND = {"0", "gnd", "gnd!"}
 
 
@@ -155,16 +219,29 @@ def parse_netlist(text):
         if head.startswith("."):
             if head == ".subckt" and len(tok) > 1:
                 pins = [t for t in tok[2:] if "=" not in t and t.lower() != "params:"]
-                nl.subckts[tok[1].lower()] = Subckt(tok[1].lower(), [p.lower() for p in pins])
+                nl.subckts[tok[1].lower()] = Subckt(
+                    tok[1].lower(), [p.lower() for p in pins]
+                )
                 scope = tok[1].lower()
             elif head == ".ends":
                 scope = ""
             elif head == ".param":
-                for item in re.findall(r"(\w+)=(\{[^}]*\}|'[^']*'|\S+)", line[len(tok[0]):]):
+                for item in re.findall(
+                    r"(\w+)=(\{[^}]*\}|'[^']*'|\S+)", line[len(tok[0]) :]
+                ):
                     v = spice_value(item[1], nl.params)
                     if v is not None:
                         nl.params[item[0].lower()] = v
-            elif head in (".tran", ".dc", ".ac", ".op", ".noise", ".tf", ".pz", ".sens"):
+            elif head in (
+                ".tran",
+                ".dc",
+                ".ac",
+                ".op",
+                ".noise",
+                ".tf",
+                ".pz",
+                ".sens",
+            ):
                 nl.analyses.append(line)
             elif head in (".meas", ".measure") and len(tok) > 2:
                 nl.measures.append(tok[2].lower())
@@ -189,7 +266,9 @@ def parse_netlist(text):
             n = _NODE_COUNT.get(kind, 2)
             nodes = plain[:n]
             model = plain[n] if len(plain) > n else ""
-        nl.devices.append(Device(tok[0], kind, [x.lower() for x in nodes], model, params, scope))
+        nl.devices.append(
+            Device(tok[0], kind, [x.lower() for x in nodes], model, params, scope)
+        )
     return nl
 
 
@@ -221,9 +300,13 @@ def connectivity_issues(nl):
             if node in GROUND or node in pins:
                 continue
             if len(r) == 1:
-                issues.append(f"[{where}] node '{node}' connects to only one device terminal (floating?)")
+                issues.append(
+                    f"[{where}] node '{node}' connects to only one device terminal (floating?)"
+                )
             elif all(x == "gate" for x in r):
-                issues.append(f"[{where}] node '{node}' only drives MOSFET gates - nothing drives it (floating gate)")
+                issues.append(
+                    f"[{where}] node '{node}' only drives MOSFET gates - nothing drives it (floating gate)"
+                )
     if not nl.analyses:
         issues.append("no analysis statement (.tran/.dc/.ac/.op) found")
     return issues
@@ -235,22 +318,37 @@ def mosfet_table(nl):
         if d.kind != "m":
             continue
         w = spice_value(d.params.get("w", ""), nl.params) if "w" in d.params else None
-        length = spice_value(d.params.get("l", ""), nl.params) if "l" in d.params else None
+        length = (
+            spice_value(d.params.get("l", ""), nl.params) if "l" in d.params else None
+        )
         nf = d.params.get("nf", "1")
         mult = d.params.get("m", "1")
-        rows.append({
-            "name": d.name, "scope": d.scope or "top", "model": d.model,
-            "d": d.nodes[0] if d.nodes else "", "g": d.nodes[1] if len(d.nodes) > 1 else "",
-            "s": d.nodes[2] if len(d.nodes) > 2 else "", "b": d.nodes[3] if len(d.nodes) > 3 else "",
-            "w": w, "l": length, "w_over_l": (w / length) if w and length else None, "nf": nf, "m": mult,
-        })
+        rows.append(
+            {
+                "name": d.name,
+                "scope": d.scope or "top",
+                "model": d.model,
+                "d": d.nodes[0] if d.nodes else "",
+                "g": d.nodes[1] if len(d.nodes) > 1 else "",
+                "s": d.nodes[2] if len(d.nodes) > 2 else "",
+                "b": d.nodes[3] if len(d.nodes) > 3 else "",
+                "w": w,
+                "l": length,
+                "w_over_l": (w / length) if w and length else None,
+                "nf": nf,
+                "m": mult,
+            }
+        )
     return rows
 
 
 def netlist_report(nl):
     out = [f"Title: {nl.title}"]
     if nl.params:
-        out.append("Parameters: " + ", ".join(f"{k}={eng(v).strip()}" for k, v in nl.params.items()))
+        out.append(
+            "Parameters: "
+            + ", ".join(f"{k}={eng(v).strip()}" for k, v in nl.params.items())
+        )
     if nl.includes:
         out.append("Includes: " + " | ".join(nl.includes))
     out.append("Analyses: " + (" | ".join(nl.analyses) or "none"))
@@ -259,10 +357,17 @@ def netlist_report(nl):
 
     counts = {}
     for d in nl.devices:
-        counts[(d.scope or "top", DEVICE_NAMES[d.kind])] = counts.get((d.scope or "top", DEVICE_NAMES[d.kind]), 0) + 1
+        counts[(d.scope or "top", DEVICE_NAMES[d.kind])] = (
+            counts.get((d.scope or "top", DEVICE_NAMES[d.kind]), 0) + 1
+        )
     out.append("")
     out.append("DEVICES")
-    out.append(format_table(["Scope", "Type", "Count"], [[s, t, c] for (s, t), c in sorted(counts.items())]))
+    out.append(
+        format_table(
+            ["Scope", "Type", "Count"],
+            [[s, t, c] for (s, t), c in sorted(counts.items())],
+        )
+    )
 
     if nl.subckts:
         out.append("")
@@ -271,20 +376,44 @@ def netlist_report(nl):
         for d in nl.devices:
             if d.kind == "x":
                 inst[d.model.lower()] = inst.get(d.model.lower(), 0) + 1
-        out.append(format_table(["Name", "Pins", "Devices inside", "Instances"],
-                                [[s.name, " ".join(s.pins), sum(1 for d in nl.devices if d.scope == s.name), inst.get(s.name, 0)]
-                                 for s in nl.subckts.values()]))
+        out.append(
+            format_table(
+                ["Name", "Pins", "Devices inside", "Instances"],
+                [
+                    [
+                        s.name,
+                        " ".join(s.pins),
+                        sum(1 for d in nl.devices if d.scope == s.name),
+                        inst.get(s.name, 0),
+                    ]
+                    for s in nl.subckts.values()
+                ],
+            )
+        )
 
     mos = mosfet_table(nl)
     if mos:
         out.append("")
         out.append("MOSFETS")
-        out.append(format_table(
-            ["Name", "Scope", "Model", "D G S B", "W", "L", "W/L", "nf", "m"],
-            [[r["name"], r["scope"], r["model"], f"{r['d']} {r['g']} {r['s']} {r['b']}",
-              eng(r["w"], "m"), eng(r["l"], "m"), f"{r['w_over_l']:.2f}" if r["w_over_l"] else "-", r["nf"], r["m"]]
-             for r in mos],
-        ))
+        out.append(
+            format_table(
+                ["Name", "Scope", "Model", "D G S B", "W", "L", "W/L", "nf", "m"],
+                [
+                    [
+                        r["name"],
+                        r["scope"],
+                        r["model"],
+                        f"{r['d']} {r['g']} {r['s']} {r['b']}",
+                        eng(r["w"], "m"),
+                        eng(r["l"], "m"),
+                        f"{r['w_over_l']:.2f}" if r["w_over_l"] else "-",
+                        r["nf"],
+                        r["m"],
+                    ]
+                    for r in mos
+                ],
+            )
+        )
 
     issues = connectivity_issues(nl)
     out.append("")
@@ -314,7 +443,9 @@ def parse_sweep_values(spec):
 
 def make_sweep(text, param, values):
     """Return [(value, netlist_text)] with .param <param> replaced by each value."""
-    pattern = re.compile(rf"(?im)^(\s*\.param\b[^\n]*?\b{re.escape(param)}\s*=\s*)(\{{[^}}]*\}}|'[^']*'|\S+)")
+    pattern = re.compile(
+        rf"(?im)^(\s*\.param\b[^\n]*?\b{re.escape(param)}\s*=\s*)(\{{[^}}]*\}}|'[^']*'|\S+)"
+    )
     out = []
     for v in values:
         if pattern.search(text):
@@ -334,7 +465,9 @@ def run_ngspice(netlist_path, timeout=300):
     exe = find_ngspice()
     if not exe:
         raise FileNotFoundError("ngspice not found on PATH")
-    res = subprocess.run([exe, "-b", str(netlist_path)], capture_output=True, text=True, timeout=timeout)
+    res = subprocess.run(
+        [exe, "-b", str(netlist_path)], capture_output=True, text=True, timeout=timeout
+    )
     return res.stdout + res.stderr
 
 
@@ -342,7 +475,9 @@ def parse_measurements(output, names):
     """Pick 'name = value' lines that ngspice prints for each .meas."""
     found = {}
     for name in names:
-        m = re.search(rf"(?im)^\s*{re.escape(name)}\s*=\s*([-+]?\d[\d.]*(?:e[-+]?\d+)?)", output)
+        m = re.search(
+            rf"(?im)^\s*{re.escape(name)}\s*=\s*([-+]?\d[\d.]*(?:e[-+]?\d+)?)", output
+        )
         found[name] = float(m.group(1)) if m else None
     return found
 
@@ -385,10 +520,16 @@ def parse_waveforms(text):
     rows = [next(csv.reader([l])) if delim else l.split() for l in lines]
     rows = [[c.strip() for c in r] for r in rows]
     first_is_header = spice_value(rows[0][0]) is None
-    header = rows[0] if first_is_header else [("time" if i == 0 else f"col{i}") for i in range(len(rows[0]))]
+    header = (
+        rows[0]
+        if first_is_header
+        else [("time" if i == 0 else f"col{i}") for i in range(len(rows[0]))]
+    )
     data_rows = rows[1:] if first_is_header else rows
     try:
-        cols = list(zip(*[[float(c) for c in r] for r in data_rows if len(r) == len(header)]))
+        cols = list(
+            zip(*[[float(c) for c in r] for r in data_rows if len(r) == len(header)])
+        )
     except ValueError as exc:
         raise ValueError(f"non-numeric value in the data rows ({exc})") from exc
     waves = {}
@@ -417,7 +558,9 @@ def crossings(t, y, level, direction):
     out = []
     for i in range(len(y) - 1):
         a, b = y[i], y[i + 1]
-        if (direction == "rise" and a < level <= b) or (direction == "fall" and a > level >= b):
+        if (direction == "rise" and a < level <= b) or (
+            direction == "fall" and a > level >= b
+        ):
             out.append(t[i] + (level - a) * (t[i + 1] - t[i]) / (b - a))
     return out
 
@@ -468,7 +611,9 @@ def measure(waves, signal, ref=None, vdd=None):
         ry = waves[find_wave(waves, ref)]
         rlo, rhi = (0.0, vdd) if vdd else (min(ry), max(ry))
         rmid = rlo + 0.5 * (rhi - rlo)
-        ref_edges = sorted(crossings(t, ry, rmid, "rise") + crossings(t, ry, rmid, "fall"))
+        ref_edges = sorted(
+            crossings(t, ry, rmid, "rise") + crossings(t, ry, rmid, "fall")
+        )
 
         def delays(out_edges):
             ds = []
@@ -487,10 +632,15 @@ def measure(waves, signal, ref=None, vdd=None):
 
 
 MEAS_LABELS = [
-    ("vmin", "Minimum voltage", "V"), ("vmax", "Maximum voltage", "V"),
-    ("rise_time", "Rise time (10-90%)", "s"), ("fall_time", "Fall time (90-10%)", "s"),
-    ("tpLH", "Prop. delay, output rising (tpLH)", "s"), ("tpHL", "Prop. delay, output falling (tpHL)", "s"),
-    ("tpd", "Average propagation delay (tpd)", "s"), ("period", "Period", "s"), ("frequency", "Frequency", "Hz"),
+    ("vmin", "Minimum voltage", "V"),
+    ("vmax", "Maximum voltage", "V"),
+    ("rise_time", "Rise time (10-90%)", "s"),
+    ("fall_time", "Fall time (90-10%)", "s"),
+    ("tpLH", "Prop. delay, output rising (tpLH)", "s"),
+    ("tpHL", "Prop. delay, output falling (tpHL)", "s"),
+    ("tpd", "Average propagation delay (tpd)", "s"),
+    ("period", "Period", "s"),
+    ("frequency", "Frequency", "Hz"),
 ]
 
 
@@ -501,5 +651,7 @@ def measure_report(res, signal, ref=None):
     for k, label in (("overshoot_pct", "Overshoot"), ("undershoot_pct", "Undershoot")):
         if k in res:
             rows.append([label, f"{res[k]:.2f} % of VDD"])
-    title = f"MEASUREMENTS for '{signal}'" + (f" (delay reference: '{ref}')" if ref else "")
+    title = f"MEASUREMENTS for '{signal}'" + (
+        f" (delay reference: '{ref}')" if ref else ""
+    )
     return title + "\n" + format_table(["Measurement", "Value"], rows)

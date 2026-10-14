@@ -25,8 +25,10 @@ _TOKEN_RE = re.compile(
 class Group:
     type: str
     args: list
-    attrs: dict = field(default_factory=dict)      # simple attributes
-    complex: dict = field(default_factory=dict)    # complex attributes: name -> list of arg lists
+    attrs: dict = field(default_factory=dict)  # simple attributes
+    complex: dict = field(
+        default_factory=dict
+    )  # complex attributes: name -> list of arg lists
     groups: list = field(default_factory=list)
 
     def children(self, gtype):
@@ -39,7 +41,12 @@ class Group:
 def _tokens(text):
     for m in _TOKEN_RE.finditer(text):
         t = m.group(0)
-        if t.isspace() or t.startswith("\\") or t.startswith("/*") or t.startswith("//"):
+        if (
+            t.isspace()
+            or t.startswith("\\")
+            or t.startswith("/*")
+            or t.startswith("//")
+        ):
             continue
         yield t
 
@@ -117,19 +124,36 @@ def _num(v, default=None):
         return default
 
 
-_TABLE_TYPES = ("cell_rise", "cell_fall", "rise_transition", "fall_transition",
-                "rise_constraint", "fall_constraint")
+_TABLE_TYPES = (
+    "cell_rise",
+    "cell_fall",
+    "rise_transition",
+    "fall_transition",
+    "rise_constraint",
+    "fall_constraint",
+)
 
 
 def _table(group, templates):
     tpl = templates.get(group.args[0] if group.args else "", {})
-    idx1 = _floats(group.complex["index_1"][0][0]) if "index_1" in group.complex else tpl.get("index_1", [])
-    idx2 = _floats(group.complex["index_2"][0][0]) if "index_2" in group.complex else tpl.get("index_2", [])
+    idx1 = (
+        _floats(group.complex["index_1"][0][0])
+        if "index_1" in group.complex
+        else tpl.get("index_1", [])
+    )
+    idx2 = (
+        _floats(group.complex["index_2"][0][0])
+        if "index_2" in group.complex
+        else tpl.get("index_2", [])
+    )
     values = [_floats(row) for row in group.complex.get("values", [[]])[0]]
     return {
         "template": group.args[0] if group.args else "",
-        "variable_1": tpl.get("variable_1", ""), "variable_2": tpl.get("variable_2", ""),
-        "index_1": idx1, "index_2": idx2, "values": values,
+        "variable_1": tpl.get("variable_1", ""),
+        "variable_2": tpl.get("variable_2", ""),
+        "index_1": idx1,
+        "index_2": idx2,
+        "values": values,
     }
 
 
@@ -146,9 +170,14 @@ def library_summary(lib):
     templates = {}
     for t in lib.children("lu_table_template"):
         templates[t.args[0]] = {
-            "variable_1": t.attrs.get("variable_1", ""), "variable_2": t.attrs.get("variable_2", ""),
-            "index_1": _floats(t.complex["index_1"][0][0]) if "index_1" in t.complex else [],
-            "index_2": _floats(t.complex["index_2"][0][0]) if "index_2" in t.complex else [],
+            "variable_1": t.attrs.get("variable_1", ""),
+            "variable_2": t.attrs.get("variable_2", ""),
+            "index_1": (
+                _floats(t.complex["index_1"][0][0]) if "index_1" in t.complex else []
+            ),
+            "index_2": (
+                _floats(t.complex["index_2"][0][0]) if "index_2" in t.complex else []
+            ),
         }
     cap_unit = lib.complex.get("capacitive_load_unit", [[]])[0]
     oc = lib.first("operating_conditions")
@@ -158,45 +187,77 @@ def library_summary(lib):
         arcs = []
         for p in c.children("pin"):
             for pin_name in p.args:
-                pins.append({
-                    "name": pin_name, "direction": p.attrs.get("direction", ""),
-                    "capacitance": _num(p.attrs.get("capacitance")),
-                    "function": p.attrs.get("function", ""), "clock": p.attrs.get("clock", "") == "true",
-                    "max_capacitance": _num(p.attrs.get("max_capacitance")),
-                })
+                pins.append(
+                    {
+                        "name": pin_name,
+                        "direction": p.attrs.get("direction", ""),
+                        "capacitance": _num(p.attrs.get("capacitance")),
+                        "function": p.attrs.get("function", ""),
+                        "clock": p.attrs.get("clock", "") == "true",
+                        "max_capacitance": _num(p.attrs.get("max_capacitance")),
+                    }
+                )
                 for t in p.children("timing"):
                     arc = {
-                        "from": t.attrs.get("related_pin", ""), "to": pin_name,
+                        "from": t.attrs.get("related_pin", ""),
+                        "to": pin_name,
                         "timing_sense": t.attrs.get("timing_sense", ""),
                         "timing_type": t.attrs.get("timing_type", "combinational"),
-                        "tables": {g.type: _table(g, templates) for g in t.groups if g.type in _TABLE_TYPES},
+                        "tables": {
+                            g.type: _table(g, templates)
+                            for g in t.groups
+                            if g.type in _TABLE_TYPES
+                        },
                     }
                     arcs.append(arc)
         family, strength = drive_family(c.args[0])
         delay = _typical_delay(arcs)
-        cells.append({
-            "name": c.args[0], "family": family, "strength": strength,
-            "area": _num(c.attrs.get("area"), 0.0),
-            "leakage": _num(c.attrs.get("cell_leakage_power")),
-            "footprint": c.attrs.get("cell_footprint", ""),
-            "sequential": bool(c.first("ff") or c.first("latch")),
-            "kind": "flip-flop" if c.first("ff") else "latch" if c.first("latch") else "combinational",
-            "function": next((p["function"] for p in pins if p["direction"] == "output" and p["function"]), ""),
-            "inputs": [p["name"] for p in pins if p["direction"] == "input"],
-            "outputs": [p["name"] for p in pins if p["direction"] == "output"],
-            "pins": pins, "arcs": arcs, "typical_delay": delay,
-        })
+        cells.append(
+            {
+                "name": c.args[0],
+                "family": family,
+                "strength": strength,
+                "area": _num(c.attrs.get("area"), 0.0),
+                "leakage": _num(c.attrs.get("cell_leakage_power")),
+                "footprint": c.attrs.get("cell_footprint", ""),
+                "sequential": bool(c.first("ff") or c.first("latch")),
+                "kind": (
+                    "flip-flop"
+                    if c.first("ff")
+                    else "latch" if c.first("latch") else "combinational"
+                ),
+                "function": next(
+                    (
+                        p["function"]
+                        for p in pins
+                        if p["direction"] == "output" and p["function"]
+                    ),
+                    "",
+                ),
+                "inputs": [p["name"] for p in pins if p["direction"] == "input"],
+                "outputs": [p["name"] for p in pins if p["direction"] == "output"],
+                "pins": pins,
+                "arcs": arcs,
+                "typical_delay": delay,
+            }
+        )
     return {
         "name": lib.args[0] if lib.args else "?",
         "units": {
-            "time": lib.attrs.get("time_unit", ""), "voltage": lib.attrs.get("voltage_unit", ""),
+            "time": lib.attrs.get("time_unit", ""),
+            "voltage": lib.attrs.get("voltage_unit", ""),
             "leakage_power": lib.attrs.get("leakage_power_unit", ""),
             "capacitive_load": " ".join(cap_unit) if cap_unit else "",
         },
         "operating_conditions": {
-            "name": oc.args[0] if oc else "", "process": _num(oc.attrs.get("process")) if oc else None,
-            "voltage": _num(oc.attrs.get("voltage") if oc else lib.attrs.get("nom_voltage")),
-            "temperature": _num(oc.attrs.get("temperature") if oc else lib.attrs.get("nom_temperature")),
+            "name": oc.args[0] if oc else "",
+            "process": _num(oc.attrs.get("process")) if oc else None,
+            "voltage": _num(
+                oc.attrs.get("voltage") if oc else lib.attrs.get("nom_voltage")
+            ),
+            "temperature": _num(
+                oc.attrs.get("temperature") if oc else lib.attrs.get("nom_temperature")
+            ),
         },
         "templates": templates,
         "cells": cells,

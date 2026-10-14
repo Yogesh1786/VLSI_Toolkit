@@ -34,8 +34,11 @@
 }
 
 @theme inline {
-  --font-sans: "Segoe UI", "Inter", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "Cascadia Code", "JetBrains Mono", Consolas, "Courier New", monospace;
+  --font-sans:
+    "Segoe UI", "Inter", system-ui, -apple-system, "Helvetica Neue", Arial,
+    sans-serif;
+  --font-mono:
+    "Cascadia Code", "JetBrains Mono", Consolas, "Courier New", monospace;
 
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -83,16 +86,47 @@ pre,
 }
 
 /* syntax colors used by CodeBlock */
-.tok-kw { color: #7c4fd6; font-weight: 600; }
-.tok-str { color: #1f8a50; }
-.tok-num { color: #c2410c; }
-.tok-com { color: var(--faint); font-style: italic; }
-.tok-sys { color: #2563eb; }
-.dark .tok-kw { color: #b49bff; }
-.dark .tok-str { color: #6fd39c; }
-.dark .tok-num { color: #ffab70; }
-.dark .tok-sys { color: #7fb0ff; }
+.tok-kw {
+  color: #7c4fd6;
+  font-weight: 600;
+}
+.tok-str {
+  color: #1f8a50;
+}
+.tok-num {
+  color: #c2410c;
+}
+.tok-com {
+  color: var(--faint);
+  font-style: italic;
+}
+.tok-sys {
+  color: #2563eb;
+}
+.dark .tok-kw {
+  color: #b49bff;
+}
+.dark .tok-str {
+  color: #6fd39c;
+}
+.dark .tok-num {
+  color: #ffab70;
+}
+.dark .tok-sys {
+  color: #7fb0ff;
+}
 
 /* fade-in for page content */
-@keyframes vt-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-.vt-fade { animation: vt-fade 0.22s ease-out both; }
+@keyframes vt-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.vt-fade {
+  animation: vt-fade 0.22s ease-out both;
+}

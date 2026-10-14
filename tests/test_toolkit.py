@@ -8,14 +8,25 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from vlsi_toolkit import common, regmap_gen, tb_generator, timing_report, vcd_analyzer, verilog_parser
+from vlsi_toolkit import (
+    common,
+    regmap_gen,
+    tb_generator,
+    timing_report,
+    vcd_analyzer,
+    verilog_parser,
+)
 from vlsi_toolkit.cli import main
 
 
 def run_cli(argv):
     """Run the CLI with its printed output hidden; return the exit code."""
-    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+    with (
+        contextlib.redirect_stdout(io.StringIO()),
+        contextlib.redirect_stderr(io.StringIO()),
+    ):
         return main(argv)
+
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 
@@ -26,11 +37,15 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(common.eval_expr("WIDTH-1", env), 7)
         self.assertEqual(common.eval_expr("$clog2(DEPTH)", env), 5)
         self.assertEqual(common.eval_expr("8'hFF + 4'b0001", env), 256)
-        self.assertEqual(common.eval_expr("DEPTH/3", env), 10)  # integer division like Verilog
+        self.assertEqual(
+            common.eval_expr("DEPTH/3", env), 10
+        )  # integer division like Verilog
         self.assertIsNone(common.try_eval("UNKNOWN+1", env))
 
     def test_clog2(self):
-        self.assertEqual([common.clog2(n) for n in (1, 2, 3, 4, 5, 1024)], [0, 1, 2, 2, 3, 10])
+        self.assertEqual(
+            [common.clog2(n) for n in (1, 2, 3, 4, 5, 1024)], [0, 1, 2, 2, 3, 10]
+        )
 
     def test_strip_comments_keeps_strings(self):
         src = 'a = 1; // note\n/* block\ncomment */ $display("http://x");'
@@ -155,7 +170,9 @@ class TestTimingReport(unittest.TestCase):
   slack (VIOLATED)                                  -0.20
 """
         p = timing_report.parse_report(rpt)[0]
-        self.assertEqual((p.startpoint, p.endpoint, p.check), ("a_reg", "b_reg", "setup"))
+        self.assertEqual(
+            (p.startpoint, p.endpoint, p.check), ("a_reg", "b_reg", "setup")
+        )
         self.assertAlmostEqual(p.slack, -0.20)
 
     def test_vivado_style(self):
@@ -193,18 +210,31 @@ class TestRegmap(unittest.TestCase):
         self.assertIn("#define UART_CTRL_BAUD_DIV_MASK  0x000FFFF0U", h)
 
     def _spec(self, **reg_overrides):
-        reg = {"name": "A", "offset": "0x0", "access": "RW", "fields": [{"name": "X", "bits": "3:0"}]}
+        reg = {
+            "name": "A",
+            "offset": "0x0",
+            "access": "RW",
+            "fields": [{"name": "X", "bits": "3:0"}],
+        }
         reg.update(reg_overrides)
-        return {"block": "blk", "data_width": 32, "registers": [reg, {"name": "B", "offset": "0x4"}]}
+        return {
+            "block": "blk",
+            "data_width": 32,
+            "registers": [reg, {"name": "B", "offset": "0x4"}],
+        }
 
     def test_validation_errors(self):
         bad_cases = [
             self._spec(offset="0x4"),  # duplicate offset with B
             self._spec(offset="0x2"),  # unaligned
             self._spec(access="RX"),  # bad access type
-            self._spec(fields=[{"name": "X", "bits": "3:0"}, {"name": "Y", "bits": "2"}]),  # overlap
+            self._spec(
+                fields=[{"name": "X", "bits": "3:0"}, {"name": "Y", "bits": "2"}]
+            ),  # overlap
             self._spec(fields=[{"name": "X", "bits": "40:33"}]),  # beyond data width
-            self._spec(fields=[{"name": "X", "bits": "1:0", "reset": "0x7"}]),  # reset too wide
+            self._spec(
+                fields=[{"name": "X", "bits": "1:0", "reset": "0x7"}]
+            ),  # reset too wide
         ]
         for spec in bad_cases:
             with self.assertRaises(regmap_gen.RegMapError, msg=json.dumps(spec)):
@@ -229,11 +259,30 @@ class TestCli(unittest.TestCase):
     def test_all_commands_run(self):
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(run_cli(["parse", str(EXAMPLES / "fifo.v"), "--json"]), 0)
-            self.assertEqual(run_cli(["tb", str(EXAMPLES / "counter.v"), "-o", d, "--cocotb"]), 0)
+            self.assertEqual(
+                run_cli(["tb", str(EXAMPLES / "counter.v"), "-o", d, "--cocotb"]), 0
+            )
             self.assertTrue((Path(d) / "tb_counter.v").exists())
-            self.assertEqual(run_cli(["timing", str(EXAMPLES / "sta_report.rpt"), "--csv", str(Path(d) / "t.csv")]), 0)
-            self.assertEqual(run_cli(["timing", str(EXAMPLES / "sta_report.rpt"), "--fail-on-violation"]), 2)
-            self.assertEqual(run_cli(["regmap", str(EXAMPLES / "uart_regmap.json"), "-o", d]), 0)
+            self.assertEqual(
+                run_cli(
+                    [
+                        "timing",
+                        str(EXAMPLES / "sta_report.rpt"),
+                        "--csv",
+                        str(Path(d) / "t.csv"),
+                    ]
+                ),
+                0,
+            )
+            self.assertEqual(
+                run_cli(
+                    ["timing", str(EXAMPLES / "sta_report.rpt"), "--fail-on-violation"]
+                ),
+                2,
+            )
+            self.assertEqual(
+                run_cli(["regmap", str(EXAMPLES / "uart_regmap.json"), "-o", d]), 0
+            )
             self.assertTrue((Path(d) / "uart_regs.html").exists())
             self.assertEqual(run_cli(["vcd", str(EXAMPLES / "sample.vcd")]), 0)
             self.assertEqual(run_cli(["parse", "does_not_exist.v"]), 1)

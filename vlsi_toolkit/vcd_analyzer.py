@@ -38,7 +38,7 @@ class VCD:
 def _parse_timescale(text):
     text = text.replace(" ", "")
     num = "".join(ch for ch in text if ch.isdigit()) or "1"
-    unit = text[len(num):] or "ns"
+    unit = text[len(num) :] or "ns"
     return int(num) * _UNIT_SECONDS.get(unit, 1e-9), f"{num}{unit}"
 
 
@@ -147,7 +147,9 @@ def analyze(vcd, glitch_threshold=1, x_check_after=None):
     stats = []
     for sig in vcd.signals.values():
         ch = sig.changes
-        st = SignalStats(sig.name, sig.width, max(len(ch) - 1, 0), ch[-1][1] if ch else "?")
+        st = SignalStats(
+            sig.name, sig.width, max(len(ch) - 1, 0), ch[-1][1] if ch else "?"
+        )
         if sig.width == 1 and sig.var_type != "real":
             st.period, st.duty = _clock_info(ch)
             if st.period is None:
@@ -174,7 +176,12 @@ def freq_text(period, timescale_s):
 
 
 def short_value(value, width):
-    if width == 1 or any(c in value for c in "xz") or not value or not set(value) <= {"0", "1"}:
+    if (
+        width == 1
+        or any(c in value for c in "xz")
+        or not value
+        or not set(value) <= {"0", "1"}
+    ):
         return value
     return f"0x{int(value, 2):X}"
 
@@ -188,10 +195,28 @@ def report_text(vcd, stats):
     for s in sorted(stats, key=lambda s: s.name):
         clock = ""
         if s.period:
-            clock = f"{freq_text(s.period, vcd.timescale_s)}, duty {s.duty:.0%}" if s.duty else freq_text(s.period, vcd.timescale_s)
-        rows.append([s.name, s.width, s.toggles, short_value(s.final, s.width), clock,
-                     s.glitches or "", "" if s.x_after is None else f"X/Z @ {s.x_after}"])
-    out.append(format_table(["Signal", "Width", "Toggles", "Final", "Clock", "Glitches", "Unknowns"], rows))
+            clock = (
+                f"{freq_text(s.period, vcd.timescale_s)}, duty {s.duty:.0%}"
+                if s.duty
+                else freq_text(s.period, vcd.timescale_s)
+            )
+        rows.append(
+            [
+                s.name,
+                s.width,
+                s.toggles,
+                short_value(s.final, s.width),
+                clock,
+                s.glitches or "",
+                "" if s.x_after is None else f"X/Z @ {s.x_after}",
+            ]
+        )
+    out.append(
+        format_table(
+            ["Signal", "Width", "Toggles", "Final", "Clock", "Glitches", "Unknowns"],
+            rows,
+        )
+    )
 
     issues = [s for s in stats if s.glitches or s.x_after is not None]
     idle = [s for s in stats if s.toggles == 0]
@@ -200,10 +225,17 @@ def report_text(vcd, stats):
         out.append("ISSUES")
         for s in issues:
             if s.glitches:
-                out.append(f"  - {s.name}: {s.glitches} glitch(es) narrower than threshold")
+                out.append(
+                    f"  - {s.name}: {s.glitches} glitch(es) narrower than threshold"
+                )
             if s.x_after is not None:
-                out.append(f"  - {s.name}: X/Z value still present at time {s.x_after} (missing reset or undriven net?)")
+                out.append(
+                    f"  - {s.name}: X/Z value still present at time {s.x_after} (missing reset or undriven net?)"
+                )
     if idle:
         out.append("")
-        out.append("NEVER TOGGLED (check if stimulus reaches them): " + ", ".join(s.name for s in idle))
+        out.append(
+            "NEVER TOGGLED (check if stimulus reaches them): "
+            + ", ".join(s.name for s in idle)
+        )
     return "\n".join(out)

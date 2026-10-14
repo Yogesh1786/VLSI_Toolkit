@@ -51,7 +51,16 @@ export default function App() {
         <Route path="/power" element={<PowerReport />} />
         <Route path="/sdc" element={<SdcChecker />} />
         <Route path="/compare" element={<Compare />} />
-        <Route path="*" element={<EmptyState icon={SearchX} title="Page not found" text="Pick a tool from the sidebar." />} />
+        <Route
+          path="*"
+          element={
+            <EmptyState
+              icon={SearchX}
+              title="Page not found"
+              text="Pick a tool from the sidebar."
+            />
+          }
+        />
       </Routes>
     </Layout>
   );

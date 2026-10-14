@@ -17,12 +17,16 @@ from .regress import signatures
 def _by_test(results):
     tests = {}
     for r in results:
-        t = tests.setdefault(r.test, {"status": "PASS", "seeds": [], "signature": "", "errors": 0})
+        t = tests.setdefault(
+            r.test, {"status": "PASS", "seeds": [], "signature": "", "errors": 0}
+        )
         t["seeds"].append(r.seed)
         t["errors"] += r.errors + r.fatals
         if r.status != "PASS":
             # FAIL beats INCOMPLETE beats PASS
-            if t["status"] == "PASS" or (t["status"] == "INCOMPLETE" and r.status == "FAIL"):
+            if t["status"] == "PASS" or (
+                t["status"] == "INCOMPLETE" and r.status == "FAIL"
+            ):
                 t["status"] = r.status
                 t["signature"] = r.signature
     return tests
@@ -45,27 +49,58 @@ def compare_regressions(old_results, new_results):
             change = "still_failing"
         else:
             change = "still_passing"
-        rows.append({
-            "test": name, "change": change,
-            "old_status": o["status"] if o else None, "new_status": n["status"] if n else None,
-            "old_signature": o["signature"] if o else "", "new_signature": n["signature"] if n else "",
-            "signature_changed": bool(o and n and o["signature"] != n["signature"] and change == "still_failing"),
-        })
+        rows.append(
+            {
+                "test": name,
+                "change": change,
+                "old_status": o["status"] if o else None,
+                "new_status": n["status"] if n else None,
+                "old_signature": o["signature"] if o else "",
+                "new_signature": n["signature"] if n else "",
+                "signature_changed": bool(
+                    o
+                    and n
+                    and o["signature"] != n["signature"]
+                    and change == "still_failing"
+                ),
+            }
+        )
 
     def rate(res):
         return sum(r.status == "PASS" for r in res) / len(res) if res else 0.0
 
     old_sigs, new_sigs = set(signatures(old_results)), set(signatures(new_results))
-    count = {c: sum(r["change"] == c for r in rows)
-             for c in ("new_failure", "fixed", "still_failing", "still_passing", "added", "removed")}
+    count = {
+        c: sum(r["change"] == c for r in rows)
+        for c in (
+            "new_failure",
+            "fixed",
+            "still_failing",
+            "still_passing",
+            "added",
+            "removed",
+        )
+    }
     return {
-        "old": {"logs": len(old_results), "tests": len(old), "pass_rate": rate(old_results)},
-        "new": {"logs": len(new_results), "tests": len(new), "pass_rate": rate(new_results)},
+        "old": {
+            "logs": len(old_results),
+            "tests": len(old),
+            "pass_rate": rate(old_results),
+        },
+        "new": {
+            "logs": len(new_results),
+            "tests": len(new),
+            "pass_rate": rate(new_results),
+        },
         "counts": count,
         "rows": rows,
         "new_signatures": sorted(new_sigs - old_sigs),
         "gone_signatures": sorted(old_sigs - new_sigs),
-        "verdict": ("regressed" if count["new_failure"] else "improved" if count["fixed"] else "unchanged"),
+        "verdict": (
+            "regressed"
+            if count["new_failure"]
+            else "improved" if count["fixed"] else "unchanged"
+        ),
     }
 
 
@@ -88,14 +123,23 @@ def compare_timing(old_paths, new_paths, tolerance=0.005):
     checks = []
     for c in sorted(set(so) | set(sn), key=lambda c: c != "setup"):
         o, n = so.get(c, {}), sn.get(c, {})
-        checks.append({
-            "check": c,
-            "old_wns": o.get("wns"), "new_wns": n.get("wns"),
-            "old_tns": o.get("tns", 0.0), "new_tns": n.get("tns", 0.0),
-            "old_violations": o.get("violations", 0), "new_violations": n.get("violations", 0),
-            "delta_wns": round(n["wns"] - o["wns"], 4) if o.get("wns") is not None and n.get("wns") is not None else None,
-            "delta_tns": round(n.get("tns", 0.0) - o.get("tns", 0.0), 4),
-        })
+        checks.append(
+            {
+                "check": c,
+                "old_wns": o.get("wns"),
+                "new_wns": n.get("wns"),
+                "old_tns": o.get("tns", 0.0),
+                "new_tns": n.get("tns", 0.0),
+                "old_violations": o.get("violations", 0),
+                "new_violations": n.get("violations", 0),
+                "delta_wns": (
+                    round(n["wns"] - o["wns"], 4)
+                    if o.get("wns") is not None and n.get("wns") is not None
+                    else None
+                ),
+                "delta_tns": round(n.get("tns", 0.0) - o.get("tns", 0.0), 4),
+            }
+        )
 
     wo, wn = _endpoint_worst(old_paths), _endpoint_worst(new_paths)
     rows = []
@@ -115,12 +159,43 @@ def compare_timing(old_paths, new_paths, tolerance=0.005):
             change = "degraded"
         else:
             change = "unchanged"
-        rows.append({"check": key[0], "endpoint": key[1], "old_slack": a, "new_slack": b,
-                     "delta": round(b - a, 4) if a is not None and b is not None else None, "change": change})
-    count = {c: sum(r["change"] == c for r in rows)
-             for c in ("new_violation", "fixed", "degraded", "improved", "unchanged", "added", "removed")}
-    worse = count["new_violation"] or any((c["delta_wns"] or 0) < -tolerance for c in checks)
+        rows.append(
+            {
+                "check": key[0],
+                "endpoint": key[1],
+                "old_slack": a,
+                "new_slack": b,
+                "delta": round(b - a, 4) if a is not None and b is not None else None,
+                "change": change,
+            }
+        )
+    count = {
+        c: sum(r["change"] == c for r in rows)
+        for c in (
+            "new_violation",
+            "fixed",
+            "degraded",
+            "improved",
+            "unchanged",
+            "added",
+            "removed",
+        )
+    }
+    worse = count["new_violation"] or any(
+        (c["delta_wns"] or 0) < -tolerance for c in checks
+    )
     better = count["fixed"] or any((c["delta_wns"] or 0) > tolerance for c in checks)
-    return {"checks": checks, "rows": rows, "counts": count,
-            "verdict": "regressed" if worse and not better else "improved" if better and not worse
-            else "mixed" if worse and better else "unchanged"}
+    return {
+        "checks": checks,
+        "rows": rows,
+        "counts": count,
+        "verdict": (
+            "regressed"
+            if worse and not better
+            else (
+                "improved"
+                if better and not worse
+                else "mixed" if worse and better else "unchanged"
+            )
+        ),
+    }

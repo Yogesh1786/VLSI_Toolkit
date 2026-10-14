@@ -102,7 +102,12 @@ def _module_bodies(text):
 def _instances(text, start, end):
     body = text[start:end]
     # function/task bodies have no instances and confuse the pattern
-    body_clean = re.sub(r"\b(function|task)\b.*?\bend\1\b", lambda m: " " * len(m.group(0)), body, flags=re.S)
+    body_clean = re.sub(
+        r"\b(function|task)\b.*?\bend\1\b",
+        lambda m: " " * len(m.group(0)),
+        body,
+        flags=re.S,
+    )
     out = []
     pos = 0
     while True:
@@ -129,7 +134,9 @@ def _instances(text, start, end):
                 pm = re.match(r"\s*\.(\w+)\s*\((.*)\)\s*$", item, re.S)
                 if pm:
                     pmap[pm.group(1)] = " ".join(pm.group(2).split())
-        out.append(Instance(mod, name, _line_of(text, start + m.start(3)), pmap, len(conns)))
+        out.append(
+            Instance(mod, name, _line_of(text, start + m.start(3)), pmap, len(conns))
+        )
         pos = close_idx + 1
     return out
 
@@ -138,23 +145,34 @@ def _instances(text, start, end):
 # FSM extraction
 # ---------------------------------------------------------------------------
 
-_CASE_RE = re.compile(r"\b(?:unique\s+|priority\s+)?case[zx]?\s*\(\s*([A-Za-z_]\w*)\s*\)")
+_CASE_RE = re.compile(
+    r"\b(?:unique\s+|priority\s+)?case[zx]?\s*\(\s*([A-Za-z_]\w*)\s*\)"
+)
 
 
 def _case_items(block):
     """Split the inside of a case block into [(labels, body)] at nesting depth 0."""
     items = []
-    tokens = list(re.finditer(r"\b(begin|end|case[zx]?|endcase|fork|join)\b|([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*|default)\s*:(?!:)", block))
+    tokens = list(
+        re.finditer(
+            r"\b(begin|end|case[zx]?|endcase|fork|join)\b|([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*|default)\s*:(?!:)",
+            block,
+        )
+    )
     depth = 0
     starts = []
     for t in tokens:
         kw = t.group(1)
-        if kw in ("begin", "fork") or (kw and kw.startswith("case") and kw != "endcase"):
+        if kw in ("begin", "fork") or (
+            kw and kw.startswith("case") and kw != "endcase"
+        ):
             depth += 1
         elif kw in ("end", "join", "endcase"):
             depth -= 1
         elif t.group(2) and depth == 0:
-            starts.append((t.start(), t.end(), [s.strip() for s in t.group(2).split(",")]))
+            starts.append(
+                (t.start(), t.end(), [s.strip() for s in t.group(2).split(",")])
+            )
     for k, (s, e, labels) in enumerate(starts):
         body_end = starts[k + 1][0] if k + 1 < len(starts) else len(block)
         items.append((labels, block[e:body_end]))
@@ -195,7 +213,7 @@ def _fsms(module_name, text, start, end):
         # find the matching endcase
         depth, i = 0, cm.end()
         block_end = None
-        for t in re.finditer(r"\b(case[zx]?|endcase)\b", body[cm.end():]):
+        for t in re.finditer(r"\b(case[zx]?|endcase)\b", body[cm.end() :]):
             if t.group(1) == "endcase":
                 if depth == 0:
                     block_end = cm.end() + t.start()
@@ -205,12 +223,21 @@ def _fsms(module_name, text, start, end):
                 depth += 1
         if block_end is None:
             continue
-        items = _case_items(body[cm.end():block_end])
-        states = [lbl for labels, _ in items for lbl in labels if lbl != "default" and not lbl[0].isdigit()]
+        items = _case_items(body[cm.end() : block_end])
+        states = [
+            lbl
+            for labels, _ in items
+            for lbl in labels
+            if lbl != "default" and not lbl[0].isdigit()
+        ]
         if len(states) < 2:
             continue
         # the register being updated: state itself, or next_state / state_next / nxt_state ...
-        targets = {state_var} | set(re.findall(rf"\b(\w*(?:next|nxt|ns)\w*)\s*<?=", body[cm.end():block_end], re.I))
+        targets = {state_var} | set(
+            re.findall(
+                rf"\b(\w*(?:next|nxt|ns)\w*)\s*<?=", body[cm.end() : block_end], re.I
+            )
+        )
         transitions = []
         state_set = set(states)
         for labels, item_body in items:
@@ -222,7 +249,10 @@ def _fsms(module_name, text, start, end):
         if not transitions:
             continue
         reset = None
-        rm = re.search(rf"if\s*\(\s*!?\s*\w*(?:rst|reset)\w*\s*\)\s*(?:begin\s*)?{re.escape(state_var)}\s*<=\s*([A-Za-z_]\w*)", body)
+        rm = re.search(
+            rf"if\s*\(\s*!?\s*\w*(?:rst|reset)\w*\s*\)\s*(?:begin\s*)?{re.escape(state_var)}\s*<=\s*([A-Za-z_]\w*)",
+            body,
+        )
         if rm and rm.group(1) in state_set:
             reset = rm.group(1)
         # self-loops are implied when a state has no unconditional exit; keep only explicit ones
@@ -233,7 +263,16 @@ def _fsms(module_name, text, start, end):
             if key not in seen:
                 seen.add(key)
                 unique.append(t)
-        found.append(FSM(module_name, state_var, states, unique, reset, _line_of(text, start + cm.start())))
+        found.append(
+            FSM(
+                module_name,
+                state_var,
+                states,
+                unique,
+                reset,
+                _line_of(text, start + cm.start()),
+            )
+        )
     return found
 
 
@@ -249,8 +288,13 @@ def analyze_project(files):
     for fname, raw in files:
         text = strip_comments(raw)
         for name, mstart, bstart, bend in _module_bodies(text):
-            md = ModuleDef(name, fname, _line_of(text, mstart), _instances(text, bstart, bend),
-                           _fsms(name, text, bstart, bend))
+            md = ModuleDef(
+                name,
+                fname,
+                _line_of(text, mstart),
+                _instances(text, bstart, bend),
+                _fsms(name, text, bstart, bend),
+            )
             if name in modules:
                 duplicates.append(name)
             modules[name] = md
@@ -261,8 +305,14 @@ def analyze_project(files):
 
     def tree(name, inst_name, path):
         md = modules.get(name)
-        node = {"module": name, "instance": inst_name, "defined": md is not None,
-                "file": md.file if md else None, "children": [], "fsm_count": len(md.fsms) if md else 0}
+        node = {
+            "module": name,
+            "instance": inst_name,
+            "defined": md is not None,
+            "file": md.file if md else None,
+            "children": [],
+            "fsm_count": len(md.fsms) if md else 0,
+        }
         if md and name not in path:
             for inst in md.instances:
                 child = tree(inst.module, inst.name, path | {name})
@@ -292,18 +342,40 @@ def analyze_project(files):
         "total_instances": sum(count(t) - 1 for t in trees),
         "undefined": undefined,
         "duplicates": sorted(set(duplicates)),
-        "modules": [{
-            "name": m.name, "file": m.file, "line": m.line, "instances": len(m.instances),
-            "used": usage.get(m.name, 0), "fsms": len(m.fsms),
-            "children": sorted({i.module for i in m.instances}),
-        } for m in sorted(modules.values(), key=lambda m: m.name)],
-        "fsms": [{
-            "module": f.module, "state_var": f.state_var, "states": f.states, "reset_state": f.reset_state,
-            "line": f.line, "file": modules[f.module].file,
-            "transitions": [{"src": t.src, "dst": t.dst, "condition": t.condition} for t in f.transitions],
-            "unreachable": sorted(_unreachable(f)),
-            "dead_ends": sorted(s for s in f.states if not any(t.src == s and t.dst != s for t in f.transitions)),
-        } for m in modules.values() for f in m.fsms],
+        "modules": [
+            {
+                "name": m.name,
+                "file": m.file,
+                "line": m.line,
+                "instances": len(m.instances),
+                "used": usage.get(m.name, 0),
+                "fsms": len(m.fsms),
+                "children": sorted({i.module for i in m.instances}),
+            }
+            for m in sorted(modules.values(), key=lambda m: m.name)
+        ],
+        "fsms": [
+            {
+                "module": f.module,
+                "state_var": f.state_var,
+                "states": f.states,
+                "reset_state": f.reset_state,
+                "line": f.line,
+                "file": modules[f.module].file,
+                "transitions": [
+                    {"src": t.src, "dst": t.dst, "condition": t.condition}
+                    for t in f.transitions
+                ],
+                "unreachable": sorted(_unreachable(f)),
+                "dead_ends": sorted(
+                    s
+                    for s in f.states
+                    if not any(t.src == s and t.dst != s for t in f.transitions)
+                ),
+            }
+            for m in modules.values()
+            for f in m.fsms
+        ],
     }
 
 
@@ -330,5 +402,10 @@ def tree_text(node, prefix="", last=True, root=True):
     lines = [label if root else f"{prefix}{'`-- ' if last else '|-- '}{label}"]
     kids = node["children"]
     for i, c in enumerate(kids):
-        lines += tree_text(c, prefix if root else prefix + ("    " if last else "|   "), i == len(kids) - 1, False)
+        lines += tree_text(
+            c,
+            prefix if root else prefix + ("    " if last else "|   "),
+            i == len(kids) - 1,
+            False,
+        )
     return lines if not root else "\n".join(lines)

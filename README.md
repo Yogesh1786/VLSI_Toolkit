@@ -9,24 +9,24 @@ The core runs on **plain Python 3.10+, with no extra installs**.
 
 | Area                | Command           | What it does                                                                                                                                                                                          |
 | ------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Workspace**       | `workspace`       | **Opens a whole project folder**: finds and classifies every design file, runs every relevant tool at once and gives a health score. `--save` records a snapshot for trends                      |
-|                     | `history`         | Lists the saved snapshots of a project (health, lint, pass rate, WNS, area, power …) so you can see the trend over time                                                                            |
+| **Workspace**       | `workspace`       | **Opens a whole project folder**: finds and classifies every design file, runs every relevant tool at once and gives a health score. `--save` records a snapshot for trends                           |
+|                     | `history`         | Lists the saved snapshots of a project (health, lint, pass rate, WNS, area, power …) so you can see the trend over time                                                                               |
 | **RTL design**      | `parse`           | Lists the modules, parameters and ports in a Verilog/SystemVerilog file, with widths evaluated (`[WIDTH-1:0]` becomes 8, and `$clog2` is supported)                                                   |
 |                     | `inst`            | Prints a ready-to-paste instantiation template                                                                                                                                                        |
-|                     | `lint`            | Finds RTL bugs: multiple drivers, latches, blocking `=` in flops, `case` without `default`, and **clock-domain crossings** without a proper synchronizer                                            |
+|                     | `lint`            | Finds RTL bugs: multiple drivers, latches, blocking `=` in flops, `case` without `default`, and **clock-domain crossings** without a proper synchronizer                                              |
 |                     | `hier`            | **Design hierarchy and FSMs** of a whole project: instance tree, black boxes, unused modules, state machines with transitions, plus unreachable and stuck states                                      |
-|                     | `regmap`          | Turns one JSON/YAML register spec into **Verilog RTL, an AXI4-Lite slave with a self-checking testbench, a C header and HTML docs**                                                                  |
+|                     | `regmap`          | Turns one JSON/YAML register spec into **Verilog RTL, an AXI4-Lite slave with a self-checking testbench, a C header and HTML docs**                                                                   |
 | **Verification**    | `tb`              | Generates a Verilog testbench (clock, reset, random stimulus, VCD dump) and, optionally, a **cocotb** test                                                                                            |
 |                     | `regress`         | Summarizes a folder of simulation logs (UVM, VCS, Questa, Xcelium) and groups failures by **signature**                                                                                               |
 |                     | `vcd`             | Analyzes waveform dumps: toggles, clock frequency and duty cycle, glitches, X/Z values, idle signals                                                                                                  |
 |                     | `axi`             | **AXI protocol checker and transaction viewer**: finds AXI4/AXI4-Lite interfaces in a VCD, checks 13 protocol rules, and rebuilds every read and write with its data, response, latency and bandwidth |
-|                     | `sva`             | Generates **SystemVerilog assertions** and cover points from RTL: AXI handshake rules, legal FSM states and transitions, one-hot signals, X-free outputs                                             |
+|                     | `sva`             | Generates **SystemVerilog assertions** and cover points from RTL: AXI handshake rules, legal FSM states and transitions, one-hot signals, X-free outputs                                              |
 | **Physical design** | `timing`          | Parses OpenSTA, PrimeTime or Vivado timing reports and shows WNS/TNS, the worst paths, the endpoints with the most violations, and a slack histogram                                                  |
 |                     | `pd`              | Analyzes DEF (+LEF): die and core area, **utilization**, cell mix, unplaced cells, a **placement density map**                                                                                        |
 |                     | `lib`             | **Liberty (.lib) explorer**: cells, area, leakage, pins and functions, NLDM delay tables                                                                                                              |
-|                     | `synth`           | **Synthesis area report** (Yosys `stat`, Design Compiler `report_area -hierarchy`): total area, comb/seq split, area per module, most-used cells                                                     |
-|                     | `power`           | **Power report** (`report_power`, with or without `-hierarchy`): dynamic vs leakage, power groups, power per instance                                                                                |
-|                     | `sdc`             | **SDC checker**: unknown clocks/ports, missing I/O delays, multicycle without hold, broad false paths, unrelated clocks (13 rules, optional check against the RTL top)                               |
+|                     | `synth`           | **Synthesis area report** (Yosys `stat`, Design Compiler `report_area -hierarchy`): total area, comb/seq split, area per module, most-used cells                                                      |
+|                     | `power`           | **Power report** (`report_power`, with or without `-hierarchy`): dynamic vs leakage, power groups, power per instance                                                                                 |
+|                     | `sdc`             | **SDC checker**: unknown clocks/ports, missing I/O delays, multicycle without hold, broad false paths, unrelated clocks (13 rules, optional check against the RTL top)                                |
 | **Analog**          | `spice info`      | Netlist summary, MOSFET W/L table, **floating node and floating gate checks**                                                                                                                         |
 |                     | `spice sweep`     | Generates (and, with ngspice installed, runs) `.param` sweeps and collects the `.meas` results                                                                                                        |
 |                     | `spice measure`   | Rise/fall time, propagation delay, frequency, duty cycle and overshoot from waveform data                                                                                                             |
@@ -99,18 +99,18 @@ Then open **http://localhost:8000**.
 Browser ── React app (web/) ──HTTP/JSON──► FastAPI server (api/) ──calls──► vlsi_toolkit/ (backend)
 ```
 
-| Part         | Folder                | Role                                                                                    |
-| ------------ | --------------------- | --------------------------------------------------------------------------------------- |
-| **Frontend** | `web/src/pages/`      | One React page per tool                                                                 |
-|              | `web/src/components/` | Shared UI: cards, KPIs, tabs, tables, code viewer, charts, layout                       |
-|              | `web/src/lib/api.ts`  | All calls to the API, the health and version check, friendly error messages             |
-| **API**      | `api/main.py`         | Builds the app: routers, error handling, 404 for unknown endpoints, serving the web app |
+| Part         | Folder                | Role                                                                                              |
+| ------------ | --------------------- | ------------------------------------------------------------------------------------------------- |
+| **Frontend** | `web/src/pages/`      | One React page per tool                                                                           |
+|              | `web/src/components/` | Shared UI: cards, KPIs, tabs, tables, code viewer, charts, layout                                 |
+|              | `web/src/lib/api.ts`  | All calls to the API, the health and version check, friendly error messages                       |
+| **API**      | `api/main.py`         | Builds the app: routers, error handling, 404 for unknown endpoints, serving the web app           |
 |              | `api/routers/`        | One file per area: `general`, `workspace`, `rtl`, `verification`, `physical`, `analog`, `compare` |
-|              | `api/models.py`       | Request formats, validated automatically                                                |
-|              | `api/errors.py`       | Turns bad input (422) and crashes (500) into short JSON messages                        |
-| **Backend**  | `vlsi_toolkit/`       | All parsing and analysis. The command line uses it too.                                 |
+|              | `api/models.py`       | Request formats, validated automatically                                                          |
+|              | `api/errors.py`       | Turns bad input (422) and crashes (500) into short JSON messages                                  |
+| **Backend**  | `vlsi_toolkit/`       | All parsing and analysis. The command line uses it too.                                           |
 
-**Project workspace.** On the *Project Workspace* page, type the path of your project folder. The app finds every RTL file, log, report, VCD, DEF/LEF, SDC and netlist in it, and every tool page gets a **Workspace** tab to pick those files directly (no uploading). *Analyze* runs everything at once; *Save* stores the metrics, and the *Trends* page charts them over time. Saved runs and settings live in `~/.vlsi_toolkit/` (`history.db`, `settings.json`); set the `VT_DATA_DIR` environment variable to keep them somewhere else.
+**Project workspace.** On the _Project Workspace_ page, type the path of your project folder. The app finds every RTL file, log, report, VCD, DEF/LEF, SDC and netlist in it, and every tool page gets a **Workspace** tab to pick those files directly (no uploading). _Analyze_ runs everything at once; _Save_ stores the metrics, and the _Trends_ page charts them over time. Saved runs and settings live in `~/.vlsi_toolkit/` (`history.db`, `settings.json`); set the `VT_DATA_DIR` environment variable to keep them somewhere else.
 
 **Version check.** `/api/health` reports `api_version` (currently 5). If the web app is newer than the running API server (for example, the server was started before an update), every page shows a banner telling you to restart it. Unknown `/api/...` addresses return a clear JSON 404.
 
@@ -306,16 +306,16 @@ python vlsi.py sdc   <file.sdc> [--rtl top.v] [-m top_module]
 - `power` reads PrimePower / PrimeTime-PX / DC / Innovus `report_power` output and converts every value to mW (the leakage unit is often nW).
 - `sdc` exits with 2 when there are errors. With `--rtl` it also finds misspelled port names and ports with no input/output delay.
 
-| SDC rule                                                                  | Severity | Catches                                                    |
-| ------------------------------------------------------------------------- | -------- | ---------------------------------------------------------- |
-| `NO_CLOCK`, `DUPLICATE_CLOCK`, `BAD_PERIOD`, `GENERATED_NO_SOURCE`        | ERROR    | Missing, redefined or malformed clocks                     |
-| `UNKNOWN_CLOCK` / `UNKNOWN_PORT`                                          | ERROR    | A name that matches nothing, so the constraint is dropped  |
-| `NO_UNCERTAINTY`                                                          | WARNING  | No jitter/skew margin on a clock                           |
-| `MISSING_INPUT_DELAY` / `MISSING_OUTPUT_DELAY`                            | WARNING  | Unconstrained I/O paths (needs `--rtl`)                    |
-| `IO_DELAY_TOO_LARGE`                                                      | WARNING  | I/O delay above 80 % of the clock period                   |
-| `MCP_WITHOUT_HOLD`                                                        | WARNING  | `set_multicycle_path N -setup` without the `-hold N-1` pair |
-| `BROAD_FALSE_PATH`                                                        | WARNING  | `set_false_path` with no `-from/-to/-through`              |
-| `UNRELATED_CLOCKS`                                                        | INFO     | Two clocks with no `set_clock_groups`: timed as synchronous |
+| SDC rule                                                           | Severity | Catches                                                     |
+| ------------------------------------------------------------------ | -------- | ----------------------------------------------------------- |
+| `NO_CLOCK`, `DUPLICATE_CLOCK`, `BAD_PERIOD`, `GENERATED_NO_SOURCE` | ERROR    | Missing, redefined or malformed clocks                      |
+| `UNKNOWN_CLOCK` / `UNKNOWN_PORT`                                   | ERROR    | A name that matches nothing, so the constraint is dropped   |
+| `NO_UNCERTAINTY`                                                   | WARNING  | No jitter/skew margin on a clock                            |
+| `MISSING_INPUT_DELAY` / `MISSING_OUTPUT_DELAY`                     | WARNING  | Unconstrained I/O paths (needs `--rtl`)                     |
+| `IO_DELAY_TOO_LARGE`                                               | WARNING  | I/O delay above 80 % of the clock period                    |
+| `MCP_WITHOUT_HOLD`                                                 | WARNING  | `set_multicycle_path N -setup` without the `-hold N-1` pair |
+| `BROAD_FALSE_PATH`                                                 | WARNING  | `set_false_path` with no `-from/-to/-through`               |
+| `UNRELATED_CLOCKS`                                                 | INFO     | Two clocks with no `set_clock_groups`: timed as synchronous |
 
 The examples are in `examples/signoff/`: `uart_top.sdc` has planted mistakes and `uart_top_fixed.sdc` is clean.
 

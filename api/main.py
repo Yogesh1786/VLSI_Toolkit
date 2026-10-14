@@ -33,15 +33,28 @@ def _allow_cross_origin(app: FastAPI) -> None:
     CORS_ORIGIN_REGEX   optional pattern, e.g. https://vlsi-toolkit-.*\.vercel\.app for preview deployments
     The Vite dev server (localhost:5173) is always allowed.
     """
-    origins = [o.strip().rstrip("/") for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
+    origins = [
+        o.strip().rstrip("/")
+        for o in os.environ.get("CORS_ORIGINS", "").split(",")
+        if o.strip()
+    ]
     origins += ["http://localhost:5173", "http://127.0.0.1:5173"]
-    app.add_middleware(CORSMiddleware, allow_origins=origins, allow_origin_regex=os.environ.get("CORS_ORIGIN_REGEX") or None,
-                       allow_methods=["GET", "POST", "DELETE", "OPTIONS"], allow_headers=["Content-Type"], max_age=3600)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_origin_regex=os.environ.get("CORS_ORIGIN_REGEX") or None,
+        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type"],
+        max_age=3600,
+    )
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="VLSI Toolkit API", version=__version__,
-                  description="Analysis endpoints for the VLSI Toolkit web app. Everything runs locally.")
+    app = FastAPI(
+        title="VLSI Toolkit API",
+        version=__version__,
+        description="Analysis endpoints for the VLSI Toolkit web app. Everything runs locally.",
+    )
     install_error_handlers(app)
     _allow_cross_origin(app)
     for module in (general, workspace, rtl, verification, physical, analog, compare):
@@ -51,9 +64,13 @@ def create_app() -> FastAPI:
     # so a typo or an outdated server gives a clear JSON 404 instead of the web page (or a 405).
     @app.api_route("/api/{path:path}", methods=ALL_METHODS, include_in_schema=False)
     def unknown_endpoint(path: str, request: Request):
-        return JSONResponse(status_code=404, content={
-            "detail": f"Unknown API endpoint: {request.method} /api/{path}. If the toolkit was just updated, "
-                      "restart the API server (python -m uvicorn api.main:app --port 8000 --reload)."})
+        return JSONResponse(
+            status_code=404,
+            content={
+                "detail": f"Unknown API endpoint: {request.method} /api/{path}. If the toolkit was just updated, "
+                "restart the API server (python -m uvicorn api.main:app --port 8000 --reload)."
+            },
+        )
 
     if WEB_DIST.is_dir():
         # The built React app. Page addresses such as /lint get index.html (client-side routing).

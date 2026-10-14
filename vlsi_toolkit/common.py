@@ -92,7 +92,11 @@ _BIN_OPS = {
     ast.BitOr: operator.or_,
     ast.BitXor: operator.xor,
 }
-_UNARY_OPS = {ast.USub: operator.neg, ast.UAdd: operator.pos, ast.Invert: operator.invert}
+_UNARY_OPS = {
+    ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
+    ast.Invert: operator.invert,
+}
 
 
 def clog2(value):
@@ -161,7 +165,11 @@ def format_table(headers, rows):
         for i, cell in enumerate(row):
             widths[i] = max(widths[i], len(cell))
     line = "+-" + "-+-".join("-" * w for w in widths) + "-+"
-    out = [line, "| " + " | ".join(h.ljust(w) for h, w in zip(headers, widths)) + " |", line]
+    out = [
+        line,
+        "| " + " | ".join(h.ljust(w) for h, w in zip(headers, widths)) + " |",
+        line,
+    ]
     for row in rows:
         out.append("| " + " | ".join(c.ljust(w) for c, w in zip(row, widths)) + " |")
     out.append(line)

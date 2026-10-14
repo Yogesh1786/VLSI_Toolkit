@@ -33,13 +33,24 @@ CHANNELS = {
     "ar": ["addr", "len", "size", "burst", "id", "prot", "cache", "lock", "qos"],
     "r": ["data", "resp", "last", "id"],
 }
-_FIELDS = "valid|ready|" + "|".join(sorted({f for fs in CHANNELS.values() for f in fs}, key=len, reverse=True))
+_FIELDS = "valid|ready|" + "|".join(
+    sorted({f for fs in CHANNELS.values() for f in fs}, key=len, reverse=True)
+)
 _SIG_RE = re.compile(rf"^(.*?)(aw|ar|w|b|r)_?({_FIELDS})$", re.I)
 RESP = {0: "OKAY", 1: "EXOKAY", 2: "SLVERR", 3: "DECERR"}
 SEVERITY = {
-    "VALID_DROPPED": "ERROR", "PAYLOAD_CHANGED": "ERROR", "X_ON_VALID": "ERROR", "X_ON_PAYLOAD": "ERROR",
-    "WLAST_MISMATCH": "ERROR", "RLAST_MISMATCH": "ERROR", "BOUNDARY_4KB": "ERROR", "UNEXPECTED_B": "ERROR",
-    "UNEXPECTED_R": "ERROR", "VALID_IN_RESET": "WARNING", "ERROR_RESPONSE": "WARNING", "NO_RESPONSE": "WARNING",
+    "VALID_DROPPED": "ERROR",
+    "PAYLOAD_CHANGED": "ERROR",
+    "X_ON_VALID": "ERROR",
+    "X_ON_PAYLOAD": "ERROR",
+    "WLAST_MISMATCH": "ERROR",
+    "RLAST_MISMATCH": "ERROR",
+    "BOUNDARY_4KB": "ERROR",
+    "UNEXPECTED_B": "ERROR",
+    "UNEXPECTED_R": "ERROR",
+    "VALID_IN_RESET": "WARNING",
+    "ERROR_RESPONSE": "WARNING",
+    "NO_RESPONSE": "WARNING",
     "READY_TIMEOUT": "WARNING",
 }
 RULE_HELP = {
@@ -62,10 +73,10 @@ RULE_HELP = {
 @dataclass
 class Interface:
     prefix: str
-    signals: dict            # (channel, field) -> full VCD signal name
+    signals: dict  # (channel, field) -> full VCD signal name
     clock: str | None
     reset: str | None
-    kind: str = "AXI4"       # AXI4 or AXI4-Lite
+    kind: str = "AXI4"  # AXI4 or AXI4-Lite
 
     def has(self, ch, f):
         return (ch, f) in self.signals
@@ -86,19 +97,19 @@ class Violation:
 
 @dataclass
 class Transaction:
-    kind: str                      # WRITE / READ
+    kind: str  # WRITE / READ
     id: int | None
     addr: int | None
-    length: int                    # beats expected (len+1)
-    size: int | None               # bytes per beat
+    length: int  # beats expected (len+1)
+    size: int | None  # bytes per beat
     burst: str
     start_cycle: int
     start_time: int
-    beats: list = field(default_factory=list)   # [(data_hex, strb_hex)]
+    beats: list = field(default_factory=list)  # [(data_hex, strb_hex)]
     resp: str | None = None
     end_cycle: int | None = None
     end_time: int | None = None
-    waited: int = 0                # cycles the address VALID waited for READY before the handshake
+    waited: int = 0  # cycles the address VALID waited for READY before the handshake
 
     @property
     def latency(self):
@@ -127,13 +138,29 @@ def find_interfaces(vcd):
         groups.setdefault(prefix, {})[(m.group(2).lower(), m.group(3).lower())] = full
     out = []
     for prefix, sigs in sorted(groups.items()):
-        handshakes = [ch for ch in CHANNELS if (ch, "valid") in sigs and (ch, "ready") in sigs]
+        handshakes = [
+            ch for ch in CHANNELS if (ch, "valid") in sigs and (ch, "ready") in sigs
+        ]
         if len(handshakes) < 2:
             continue
         scope = prefix.rpartition(".")[0]
-        clock = _find_named(vcd, scope, ["aclk", "clk", "clock", "s_axi_aclk", "m_axi_aclk"], prefix)
-        reset = _find_named(vcd, scope, ["aresetn", "aresetn_i", "rst_n", "resetn", "aresetn", "s_axi_aresetn"], prefix)
-        kind = "AXI4" if any(k in sigs for k in [("aw", "len"), ("ar", "len"), ("w", "last"), ("r", "last")]) else "AXI4-Lite"
+        clock = _find_named(
+            vcd, scope, ["aclk", "clk", "clock", "s_axi_aclk", "m_axi_aclk"], prefix
+        )
+        reset = _find_named(
+            vcd,
+            scope,
+            ["aresetn", "aresetn_i", "rst_n", "resetn", "aresetn", "s_axi_aresetn"],
+            prefix,
+        )
+        kind = (
+            "AXI4"
+            if any(
+                k in sigs
+                for k in [("aw", "len"), ("ar", "len"), ("w", "last"), ("r", "last")]
+            )
+            else "AXI4-Lite"
+        )
         out.append(Interface(prefix, sigs, clock, reset, kind))
     return out
 
@@ -144,7 +171,9 @@ def _find_named(vcd, scope, names, prefix):
     parts = scope.split(".") if scope else []
     while True:
         base = ".".join(parts)
-        for n in [leaf_prefix + "aclk" if "clk" in names[0] else leaf_prefix + "aresetn"] + names:
+        for n in [
+            leaf_prefix + "aclk" if "clk" in names[0] else leaf_prefix + "aresetn"
+        ] + names:
             cand = f"{base}.{n}" if base else n
             if cand in vcd.signals:
                 return cand
@@ -214,7 +243,9 @@ def _rising_edges(vcd, clock):
 def analyze_interface(vcd, itf, timeout=16):
     viol = []
     if not itf.clock:
-        return {"error": f"No clock found for interface {itf.prefix} (expected ACLK/clk nearby)."}
+        return {
+            "error": f"No clock found for interface {itf.prefix} (expected ACLK/clk nearby)."
+        }
     edges = _rising_edges(vcd, itf.clock)
     names = list(itf.signals.values()) + ([itf.reset] if itf.reset else [])
     sampler = _Sampler(vcd, names)
@@ -222,18 +253,24 @@ def analyze_interface(vcd, itf, timeout=16):
     width = {k: vcd.signals[n].width for k, n in itf.signals.items()}
 
     def add(rule, ch, cycle, msg):
-        viol.append(Violation(rule, ch.upper(), cycle, edges[cycle] if cycle < len(edges) else 0, msg))
+        viol.append(
+            Violation(
+                rule, ch.upper(), cycle, edges[cycle] if cycle < len(edges) else 0, msg
+            )
+        )
 
     prev = None
-    wait = {ch: 0 for ch in CHANNELS}          # cycles VALID has been waiting
-    stall = {ch: 0 for ch in CHANNELS}         # total stall cycles
+    wait = {ch: 0 for ch in CHANNELS}  # cycles VALID has been waiting
+    stall = {ch: 0 for ch in CHANNELS}  # total stall cycles
     hs_count = {ch: 0 for ch in CHANNELS}
     timeout_flagged = {ch: False for ch in CHANNELS}
-    payload_flagged = {ch: False for ch in CHANNELS}  # report a payload change once per stall
+    payload_flagged = {
+        ch: False for ch in CHANNELS
+    }  # report a payload change once per stall
 
-    aw_q, w_bursts, cur_w = [], [], []         # write assembly
-    wait_b = []                                # writes waiting for B
-    reads = []                                 # reads waiting for R data
+    aw_q, w_bursts, cur_w = [], [], []  # write assembly
+    wait_b = []  # writes waiting for B
+    reads = []  # reads waiting for R data
     txns = []
     active_cycles = 0
 
@@ -242,7 +279,11 @@ def analyze_interface(vcd, itf, timeout=16):
         in_reset = itf.reset is not None and s.get(itf.reset) == "0"
         if in_reset:
             for ch in CHANNELS:
-                if itf.has(ch, "valid") and s.get(itf.signals[(ch, "valid")]) == "1" and ch in ("aw", "w", "ar"):
+                if (
+                    itf.has(ch, "valid")
+                    and s.get(itf.signals[(ch, "valid")]) == "1"
+                    and ch in ("aw", "w", "ar")
+                ):
                     add("VALID_IN_RESET", ch, c, f"{ch.upper()}VALID high during reset")
             prev = s
             continue
@@ -252,29 +293,60 @@ def analyze_interface(vcd, itf, timeout=16):
                 continue
             v, r = get(s, ch, "valid"), get(s, ch, "ready")
             if not _known(v):
-                if prev is not None and (prev.get(itf.reset) if itf.reset else "1") == "1":
+                if (
+                    prev is not None
+                    and (prev.get(itf.reset) if itf.reset else "1") == "1"
+                ):
                     add("X_ON_VALID", ch, c, f"{ch.upper()}VALID is '{v}'")
                 continue
             if v == "1":
                 for f in ("addr", "data", "len", "id"):
                     if itf.has(ch, f) and not _known(get(s, ch, f)):
-                        add("X_ON_PAYLOAD", ch, c, f"{ch.upper()}{f.upper()} is unknown while {ch.upper()}VALID=1")
+                        add(
+                            "X_ON_PAYLOAD",
+                            ch,
+                            c,
+                            f"{ch.upper()}{f.upper()} is unknown while {ch.upper()}VALID=1",
+                        )
             # stability rules: compare with the previous cycle if it was a waiting VALID
-            if prev is not None and get(prev, ch, "valid") == "1" and get(prev, ch, "ready") != "1":
+            if (
+                prev is not None
+                and get(prev, ch, "valid") == "1"
+                and get(prev, ch, "ready") != "1"
+            ):
                 if v != "1":
-                    add("VALID_DROPPED", ch, c, f"{ch.upper()}VALID dropped after {wait[ch]} cycle(s) without {ch.upper()}READY")
+                    add(
+                        "VALID_DROPPED",
+                        ch,
+                        c,
+                        f"{ch.upper()}VALID dropped after {wait[ch]} cycle(s) without {ch.upper()}READY",
+                    )
                 else:
-                    changed = [f for f in fields if itf.has(ch, f) and get(prev, ch, f) != get(s, ch, f)]
+                    changed = [
+                        f
+                        for f in fields
+                        if itf.has(ch, f) and get(prev, ch, f) != get(s, ch, f)
+                    ]
                     if changed and not payload_flagged[ch]:
                         payload_flagged[ch] = True
-                        add("PAYLOAD_CHANGED", ch, c, f"{', '.join(ch.upper() + f.upper() for f in changed)} changed while waiting for {ch.upper()}READY")
+                        add(
+                            "PAYLOAD_CHANGED",
+                            ch,
+                            c,
+                            f"{', '.join(ch.upper() + f.upper() for f in changed)} changed while waiting for {ch.upper()}READY",
+                        )
             handshake = v == "1" and r == "1"
             waited = wait[ch]
             if v == "1" and not handshake:
                 wait[ch] += 1
                 stall[ch] += 1
                 if wait[ch] > timeout and not timeout_flagged[ch]:
-                    add("READY_TIMEOUT", ch, c, f"{ch.upper()}VALID waiting for READY for more than {timeout} cycles")
+                    add(
+                        "READY_TIMEOUT",
+                        ch,
+                        c,
+                        f"{ch.upper()}VALID waiting for READY for more than {timeout} cycles",
+                    )
                     timeout_flagged[ch] = True
             else:
                 wait[ch] = 0
@@ -288,12 +360,39 @@ def analyze_interface(vcd, itf, timeout=16):
             if ch in ("aw", "ar"):
                 addr = _int(get(s, ch, "addr"))
                 length = (_int(get(s, ch, "len")) or 0) + 1 if itf.has(ch, "len") else 1
-                size = 2 ** _int(get(s, ch, "size")) if itf.has(ch, "size") and _int(get(s, ch, "size")) is not None else \
-                    (width.get(("w" if ch == "aw" else "r", "data"), 32) // 8)
-                burst = {0: "FIXED", 1: "INCR", 2: "WRAP"}.get(_int(get(s, ch, "burst")), "INCR") if itf.has(ch, "burst") else "INCR"
-                if burst == "INCR" and addr is not None and (addr // 4096) != ((addr + length * size - 1) // 4096):
-                    add("BOUNDARY_4KB", ch, c, f"burst at 0x{addr:X}, {length} x {size} bytes crosses a 4 KB boundary")
-                tx = Transaction("WRITE" if ch == "aw" else "READ", idv, addr, length, size, burst, c, t)
+                size = (
+                    2 ** _int(get(s, ch, "size"))
+                    if itf.has(ch, "size") and _int(get(s, ch, "size")) is not None
+                    else (width.get(("w" if ch == "aw" else "r", "data"), 32) // 8)
+                )
+                burst = (
+                    {0: "FIXED", 1: "INCR", 2: "WRAP"}.get(
+                        _int(get(s, ch, "burst")), "INCR"
+                    )
+                    if itf.has(ch, "burst")
+                    else "INCR"
+                )
+                if (
+                    burst == "INCR"
+                    and addr is not None
+                    and (addr // 4096) != ((addr + length * size - 1) // 4096)
+                ):
+                    add(
+                        "BOUNDARY_4KB",
+                        ch,
+                        c,
+                        f"burst at 0x{addr:X}, {length} x {size} bytes crosses a 4 KB boundary",
+                    )
+                tx = Transaction(
+                    "WRITE" if ch == "aw" else "READ",
+                    idv,
+                    addr,
+                    length,
+                    size,
+                    burst,
+                    c,
+                    t,
+                )
                 tx.waited = waited
                 if ch == "aw":
                     aw_q.append(tx)
@@ -303,15 +402,37 @@ def analyze_interface(vcd, itf, timeout=16):
                     txns.append(tx)
             elif ch == "w":
                 last = get(s, "w", "last") == "1" if itf.has("w", "last") else True
-                cur_w.append((_hex(get(s, "w", "data"), width.get(("w", "data"))),
-                              _hex(get(s, "w", "strb"), width.get(("w", "strb"))) if itf.has("w", "strb") else None))
-                expected = aw_q[len(w_bursts)].length if len(w_bursts) < len(aw_q) else None
+                cur_w.append(
+                    (
+                        _hex(get(s, "w", "data"), width.get(("w", "data"))),
+                        (
+                            _hex(get(s, "w", "strb"), width.get(("w", "strb")))
+                            if itf.has("w", "strb")
+                            else None
+                        ),
+                    )
+                )
+                expected = (
+                    aw_q[len(w_bursts)].length if len(w_bursts) < len(aw_q) else None
+                )
                 if itf.has("w", "last"):
                     if last and expected is not None and len(cur_w) < expected:
-                        add("WLAST_MISMATCH", "w", c, f"WLAST on beat {len(cur_w)}, expected on beat {expected} (AWLEN={expected - 1})")
+                        add(
+                            "WLAST_MISMATCH",
+                            "w",
+                            c,
+                            f"WLAST on beat {len(cur_w)}, expected on beat {expected} (AWLEN={expected - 1})",
+                        )
                     if not last and expected is not None and len(cur_w) == expected:
-                        add("WLAST_MISMATCH", "w", c, f"WLAST missing on beat {expected} (AWLEN={expected - 1})")
-                        last = True  # close the burst so later beats are not mis-assigned
+                        add(
+                            "WLAST_MISMATCH",
+                            "w",
+                            c,
+                            f"WLAST missing on beat {expected} (AWLEN={expected - 1})",
+                        )
+                        last = (
+                            True  # close the burst so later beats are not mis-assigned
+                        )
                 if last:
                     w_bursts.append(cur_w)
                     cur_w = []
@@ -319,36 +440,75 @@ def analyze_interface(vcd, itf, timeout=16):
             elif ch == "b":
                 tx = _pop_match(wait_b, idv)
                 if tx is None:
-                    add("UNEXPECTED_B", "b", c, "BVALID/BREADY handshake with no outstanding write")
+                    add(
+                        "UNEXPECTED_B",
+                        "b",
+                        c,
+                        "BVALID/BREADY handshake with no outstanding write",
+                    )
                     continue
-                tx.resp = RESP.get(_int(get(s, "b", "resp")), "OKAY") if itf.has("b", "resp") else "OKAY"
+                tx.resp = (
+                    RESP.get(_int(get(s, "b", "resp")), "OKAY")
+                    if itf.has("b", "resp")
+                    else "OKAY"
+                )
                 tx.end_cycle, tx.end_time = c, t
                 txns.append(tx)
                 if tx.resp in ("SLVERR", "DECERR"):
-                    add("ERROR_RESPONSE", "b", c, f"write to {_addr(tx)} answered {tx.resp}")
+                    add(
+                        "ERROR_RESPONSE",
+                        "b",
+                        c,
+                        f"write to {_addr(tx)} answered {tx.resp}",
+                    )
             elif ch == "r":
                 tx = _first_match([x for x in reads if x.end_cycle is None], idv)
                 if tx is None:
-                    add("UNEXPECTED_R", "r", c, "RVALID/RREADY handshake with no outstanding read")
+                    add(
+                        "UNEXPECTED_R",
+                        "r",
+                        c,
+                        "RVALID/RREADY handshake with no outstanding read",
+                    )
                     continue
-                tx.beats.append((_hex(get(s, "r", "data"), width.get(("r", "data"))), None))
-                resp = RESP.get(_int(get(s, "r", "resp")), "OKAY") if itf.has("r", "resp") else "OKAY"
+                tx.beats.append(
+                    (_hex(get(s, "r", "data"), width.get(("r", "data"))), None)
+                )
+                resp = (
+                    RESP.get(_int(get(s, "r", "resp")), "OKAY")
+                    if itf.has("r", "resp")
+                    else "OKAY"
+                )
                 if resp != "OKAY" and tx.resp in (None, "OKAY"):
                     tx.resp = resp
                 last = get(s, "r", "last") == "1" if itf.has("r", "last") else True
                 n = len(tx.beats)
                 if itf.has("r", "last") and last != (n == tx.length):
-                    add("RLAST_MISMATCH", "r", c, f"RLAST {'on' if last else 'missing on'} beat {n}, expected on beat {tx.length} (ARLEN={tx.length - 1})")
+                    add(
+                        "RLAST_MISMATCH",
+                        "r",
+                        c,
+                        f"RLAST {'on' if last else 'missing on'} beat {n}, expected on beat {tx.length} (ARLEN={tx.length - 1})",
+                    )
                 if last or n >= tx.length:
                     tx.end_cycle, tx.end_time = c, t
                     tx.resp = tx.resp or "OKAY"
                     if tx.resp in ("SLVERR", "DECERR"):
-                        add("ERROR_RESPONSE", "r", c, f"read from {_addr(tx)} answered {tx.resp}")
+                        add(
+                            "ERROR_RESPONSE",
+                            "r",
+                            c,
+                            f"read from {_addr(tx)} answered {tx.resp}",
+                        )
         prev = s
 
     for tx in wait_b + [x for x in reads if x.end_cycle is None] + aw_q:
-        add("NO_RESPONSE", "b" if tx.kind == "WRITE" else "r", len(edges) - 1 if edges else 0,
-            f"{tx.kind} {_addr(tx)} (id {tx.id if tx.id is not None else '-'}) accepted at cycle {tx.start_cycle} but never completed")
+        add(
+            "NO_RESPONSE",
+            "b" if tx.kind == "WRITE" else "r",
+            len(edges) - 1 if edges else 0,
+            f"{tx.kind} {_addr(tx)} (id {tx.id if tx.id is not None else '-'}) accepted at cycle {tx.start_cycle} but never completed",
+        )
         if tx not in txns:
             txns.append(tx)
     txns.sort(key=lambda x: (x.start_cycle, x.kind))
@@ -390,35 +550,78 @@ def _report(vcd, itf, edges, txns, viol, stall, hs_count, active_cycles, width):
         lat = [t.latency for t in xs]
         nbytes = sum(len(t.beats) * (t.size or 4) for t in xs)
         return {
-            "count": sum(1 for t in txns if t.kind == kind), "completed": len(xs),
-            "beats": sum(len(t.beats) for t in xs), "bytes": nbytes,
+            "count": sum(1 for t in txns if t.kind == kind),
+            "completed": len(xs),
+            "beats": sum(len(t.beats) for t in xs),
+            "bytes": nbytes,
             "bandwidth_MBps": round(nbytes / seconds / 1e6, 2) if seconds else None,
             "latency_avg": round(sum(lat) / len(lat), 1) if lat else None,
-            "latency_min": min(lat) if lat else None, "latency_max": max(lat) if lat else None,
+            "latency_min": min(lat) if lat else None,
+            "latency_max": max(lat) if lat else None,
             "errors": sum(1 for t in xs if t.resp in ("SLVERR", "DECERR")),
         }
 
     viol.sort(key=lambda v: (v.cycle, v.channel))
     return {
-        "interface": itf.prefix, "kind": itf.kind, "clock": itf.clock, "reset": itf.reset,
+        "interface": itf.prefix,
+        "kind": itf.kind,
+        "clock": itf.clock,
+        "reset": itf.reset,
         "data_width": width.get(("w", "data")) or width.get(("r", "data")),
         "addr_width": width.get(("aw", "addr")) or width.get(("ar", "addr")),
-        "clock_period": period, "timescale": vcd.timescale_text, "cycles": len(edges), "active_cycles": active_cycles,
+        "clock_period": period,
+        "timescale": vcd.timescale_text,
+        "cycles": len(edges),
+        "active_cycles": active_cycles,
         "signals": sorted(f"{ch}{f}" for ch, f in itf.signals),
-        "write": stats("WRITE"), "read": stats("READ"),
-        "channels": [{
-            "channel": ch.upper(), "handshakes": hs_count[ch], "stall_cycles": stall[ch],
-            "utilization": round(hs_count[ch] / active_cycles, 3) if active_cycles else 0,
-        } for ch in CHANNELS if itf.has(ch, "valid")],
-        "violations": [{"rule": v.rule, "severity": v.severity, "channel": v.channel, "cycle": v.cycle,
-                        "time": v.time, "message": v.message} for v in viol],
-        "transactions": [{
-            "kind": t.kind, "id": t.id, "addr": _addr(t), "length": t.length, "size": t.size, "burst": t.burst,
-            "beats": len(t.beats), "data": [b[0] for b in t.beats], "strb": [b[1] for b in t.beats],
-            "resp": t.resp, "status": t.status, "start_cycle": t.start_cycle, "end_cycle": t.end_cycle,
-            "start_time": t.start_time, "end_time": t.end_time, "latency": t.latency,
-            "waited": t.waited, "request_cycle": t.start_cycle - t.waited,
-        } for t in txns],
+        "write": stats("WRITE"),
+        "read": stats("READ"),
+        "channels": [
+            {
+                "channel": ch.upper(),
+                "handshakes": hs_count[ch],
+                "stall_cycles": stall[ch],
+                "utilization": (
+                    round(hs_count[ch] / active_cycles, 3) if active_cycles else 0
+                ),
+            }
+            for ch in CHANNELS
+            if itf.has(ch, "valid")
+        ],
+        "violations": [
+            {
+                "rule": v.rule,
+                "severity": v.severity,
+                "channel": v.channel,
+                "cycle": v.cycle,
+                "time": v.time,
+                "message": v.message,
+            }
+            for v in viol
+        ],
+        "transactions": [
+            {
+                "kind": t.kind,
+                "id": t.id,
+                "addr": _addr(t),
+                "length": t.length,
+                "size": t.size,
+                "burst": t.burst,
+                "beats": len(t.beats),
+                "data": [b[0] for b in t.beats],
+                "strb": [b[1] for b in t.beats],
+                "resp": t.resp,
+                "status": t.status,
+                "start_cycle": t.start_cycle,
+                "end_cycle": t.end_cycle,
+                "start_time": t.start_time,
+                "end_time": t.end_time,
+                "latency": t.latency,
+                "waited": t.waited,
+                "request_cycle": t.start_cycle - t.waited,
+            }
+            for t in txns
+        ],
     }
 
 
@@ -426,9 +629,13 @@ def analyze_vcd_text(text, timeout=16):
     vcd = parse_vcd(text)
     itfs = find_interfaces(vcd)
     return {
-        "timescale": vcd.timescale_text, "end_time": vcd.end_time,
+        "timescale": vcd.timescale_text,
+        "end_time": vcd.end_time,
         "interfaces": [analyze_interface(vcd, itf, timeout) for itf in itfs],
-        "rules": [{"rule": r, "severity": SEVERITY[r], "description": RULE_HELP[r]} for r in SEVERITY],
+        "rules": [
+            {"rule": r, "severity": SEVERITY[r], "description": RULE_HELP[r]}
+            for r in SEVERITY
+        ],
     }
 
 

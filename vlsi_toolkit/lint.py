@@ -44,16 +44,34 @@ SEVERITY = {
 }
 _SEV_ORDER = {"ERROR": 0, "WARNING": 1, "INFO": 2}
 
-_KEYWORDS = {"if", "else", "begin", "end", "case", "casez", "casex", "default", "for", "while", "assign", "return"}
+_KEYWORDS = {
+    "if",
+    "else",
+    "begin",
+    "end",
+    "case",
+    "casez",
+    "casex",
+    "default",
+    "for",
+    "while",
+    "assign",
+    "return",
+}
 
 _MODULE_RE = re.compile(r"\bmodule\b.*?(?:\bendmodule\b|\Z)", re.S)
 _ALWAYS_RE = re.compile(r"\balways(_ff|_comb|_latch)?\b")
-_STOP_RE = re.compile(r"\b(always\w*|assign|initial|endmodule|function|task|generate|endgenerate)\b")
+_STOP_RE = re.compile(
+    r"\b(always\w*|assign|initial|endmodule|function|task|generate|endgenerate)\b"
+)
 # A statement that assigns to a signal: boundary, then  name[sel]  then = or <=
 _LHS_RE = re.compile(
-    r"(?:^|;|\bbegin\b|\belse\b|\)|:)\s*([A-Za-z_][\w.]*)((?:\s*\[[^\]]*\])*)\s*(<=|=)(?!=)", re.M
+    r"(?:^|;|\bbegin\b|\belse\b|\)|:)\s*([A-Za-z_][\w.]*)((?:\s*\[[^\]]*\])*)\s*(<=|=)(?!=)",
+    re.M,
 )
-_ASSIGN_RE = re.compile(r"\bassign\s+(?:#\s*\S+\s+)?([A-Za-z_]\w*)((?:\s*\[[^\]]*\])*)\s*=")
+_ASSIGN_RE = re.compile(
+    r"\bassign\s+(?:#\s*\S+\s+)?([A-Za-z_]\w*)((?:\s*\[[^\]]*\])*)\s*="
+)
 _CASE_TOKEN_RE = re.compile(r"\b(casex|casez|case|endcase|default)\b")
 
 
@@ -116,7 +134,14 @@ def _always_blocks(text, start, end):
         clocked = kind == "_ff" or bool(re.search(r"\b(posedge|negedge)\b", sens))
         comb = kind == "_comb" or (not clocked and kind != "_latch" and sens != "")
         blocks.append(
-            {"pos": m.start(), "start": i, "end": body_end, "sens": sens, "clocked": clocked, "comb": comb}
+            {
+                "pos": m.start(),
+                "start": i,
+                "end": body_end,
+                "sens": sens,
+                "clocked": clocked,
+                "comb": comb,
+            }
         )
     return blocks
 
@@ -124,7 +149,9 @@ def _always_blocks(text, start, end):
 def _assignments(text, start, end):
     """[(name, select, operator, position)] for assignments inside text[start:end]."""
     body = text[start:end]
-    loop_vars = set(re.findall(r"\bfor\s*\(\s*(?:int(?:eger)?\s+|genvar\s+)?(\w+)\s*=", body))
+    loop_vars = set(
+        re.findall(r"\bfor\s*\(\s*(?:int(?:eger)?\s+|genvar\s+)?(\w+)\s*=", body)
+    )
     out = []
     for m in _LHS_RE.finditer(body):
         name = m.group(1)
@@ -146,15 +173,37 @@ def _lint_module(text, start, end, file):
         assigns = _assignments(text, blk["start"], blk["end"])
         for name, sel, op, pos in assigns:
             if blk["clocked"] and op == "=":
-                add(pos, "BLOCKING_IN_SEQ", f"blocking '=' to '{name}' in clocked always block; use '<='")
+                add(
+                    pos,
+                    "BLOCKING_IN_SEQ",
+                    f"blocking '=' to '{name}' in clocked always block; use '<='",
+                )
             if blk["comb"] and op == "<=":
-                add(pos, "NONBLOCKING_IN_COMB", f"non-blocking '<=' to '{name}' in combinational block; use '='")
+                add(
+                    pos,
+                    "NONBLOCKING_IN_COMB",
+                    f"non-blocking '<=' to '{name}' in combinational block; use '='",
+                )
         for name in {a[0] for a in assigns}:
             sels = {a[1] for a in assigns if a[0] == name}
-            drivers.setdefault(name, []).append(("" if "" in sels else ",".join(sorted(sels)), "always block", blk["pos"]))
+            drivers.setdefault(name, []).append(
+                (
+                    "" if "" in sels else ",".join(sorted(sels)),
+                    "always block",
+                    blk["pos"],
+                )
+            )
 
-        if blk["comb"] and blk["sens"] and blk["sens"].replace(" ", "") not in ("*", "(*)"):
-            add(blk["pos"], "SENS_LIST", f"sensitivity list {blk['sens']} - use @(*) or always_comb to avoid sim/synth mismatch")
+        if (
+            blk["comb"]
+            and blk["sens"]
+            and blk["sens"].replace(" ", "") not in ("*", "(*)")
+        ):
+            add(
+                blk["pos"],
+                "SENS_LIST",
+                f"sensitivity list {blk['sens']} - use @(*) or always_comb to avoid sim/synth mismatch",
+            )
 
         if blk["comb"]:
             body = text[blk["start"] : blk["end"]]
@@ -168,12 +217,17 @@ def _lint_module(text, start, end, file):
                 if ifs > elses or no_default:
                     risky = sorted({a[0] for a in assigns} - defaults)
                     if risky:
-                        add(blk["pos"], "LATCH_RISK",
+                        add(
+                            blk["pos"],
+                            "LATCH_RISK",
                             f"{', '.join(risky)} not assigned on every path -> latch "
-                            "(add default values at the top of the block)")
+                            "(add default values at the top of the block)",
+                        )
 
     for m in _ASSIGN_RE.finditer(text, start, end):
-        drivers.setdefault(m.group(1), []).append(("".join(m.group(2).split()), "assign", m.start()))
+        drivers.setdefault(m.group(1), []).append(
+            ("".join(m.group(2).split()), "assign", m.start())
+        )
 
     for name, drv in drivers.items():
         if len(drv) < 2:
@@ -183,14 +237,26 @@ def _lint_module(text, start, end, file):
         if "" not in sels and len(set(sels)) == len(sels):
             continue
         where = ", ".join(f"{d[1]} (line {_line_of(text, d[2])})" for d in drv)
-        add(drv[1][2], "MULTI_DRIVER", f"'{name}' is driven from multiple places: {where}")
+        add(
+            drv[1][2],
+            "MULTI_DRIVER",
+            f"'{name}' is driven from multiple places: {where}",
+        )
 
     for pos in _cases_without_default(text, start, end):
         add(pos, "CASE_NO_DEFAULT", "case without default branch")
     for m in re.finditer(r"\bcasex\b", text[start:end]):
-        add(start + m.start(), "CASEX", "casex hides X bugs in simulation; prefer casez or 'unique case'")
+        add(
+            start + m.start(),
+            "CASEX",
+            "casex hides X bugs in simulation; prefer casez or 'unique case'",
+        )
     for m in re.finditer(r"\binitial\b", text[start:end]):
-        add(start + m.start(), "INITIAL_IN_RTL", "initial block is ignored by ASIC synthesis (OK in testbenches)")
+        add(
+            start + m.start(),
+            "INITIAL_IN_RTL",
+            "initial block is ignored by ASIC synthesis (OK in testbenches)",
+        )
     for m in re.finditer(r"(?<![\w)`])#\s*\d+(?:\.\d+)?\b", text[start:end]):
         add(start + m.start(), "DELAY_IN_RTL", "#delay is ignored by synthesis")
     issues += _cdc(text, start, end, file)
@@ -203,7 +269,9 @@ def _lint_module(text, start, end, file):
 
 _EDGE_RE = re.compile(r"\b(posedge|negedge)\s+([A-Za-z_]\w*)")
 _NB_ASSIGN_RE = re.compile(r"([A-Za-z_]\w*)\s*(?:\[[^\]]*\])?\s*<=\s*([^;]+);")
-_DECL_RE = re.compile(r"\b(?:input|output|inout|reg|wire|logic)\b\s*(?:reg|wire|logic)?\s*(?:signed\s*)?(\[[^\]]+\])?\s*([^;()]+?)\s*[;,)]")
+_DECL_RE = re.compile(
+    r"\b(?:input|output|inout|reg|wire|logic)\b\s*(?:reg|wire|logic)?\s*(?:signed\s*)?(\[[^\]]+\])?\s*([^;()]+?)\s*[;,)]"
+)
 _IDENT_RE = re.compile(r"(?<!['\w])[A-Za-z_]\w*")
 _RESET_NAME = re.compile(r"rst|reset", re.I)
 
@@ -228,7 +296,7 @@ def _signal_widths(body):
 
 def _cdc(text, start, end, file):
     """Find signals that cross from one clock domain to another inside a module."""
-    flops = []      # (clock, lhs, rhs, position)
+    flops = []  # (clock, lhs, rhs, position)
     for b in _always_blocks(text, start, end):
         if not b["clocked"]:
             continue
@@ -238,7 +306,7 @@ def _cdc(text, start, end, file):
         for m in _NB_ASSIGN_RE.finditer(text, b["start"], b["end"]):
             flops.append((clk, m.group(1), " ".join(m.group(2).split()), m.start(1)))
     if len({c for c, *_ in flops}) < 2:
-        return []    # single clock domain: nothing can cross
+        return []  # single clock domain: nothing can cross
     domain = {}
     for clk, lhs, _, _ in flops:
         domain.setdefault(lhs, set()).add(clk)
@@ -253,17 +321,35 @@ def _cdc(text, start, end, file):
             src_clk = sorted(src_domains)[0]
             line = _line_of(text, pos)
             if rhs != src:
-                issues.append(Issue(file, line, "CDC_UNSYNC",
-                                    f"'{src}' ({src_clk} domain) is used in {clk} logic ('{lhs} <= {rhs}') without a synchronizer"))
+                issues.append(
+                    Issue(
+                        file,
+                        line,
+                        "CDC_UNSYNC",
+                        f"'{src}' ({src_clk} domain) is used in {clk} logic ('{lhs} <= {rhs}') without a synchronizer",
+                    )
+                )
                 continue
             # plain copy into this domain: is it registered again (2-flop synchronizer)?
             if not any(c == clk and r == lhs for c, _, r, _ in flops):
-                issues.append(Issue(file, line, "CDC_SINGLE_FLOP",
-                                    f"'{src}' ({src_clk} -> {clk}) passes through only one flop ('{lhs}'); use two to stop metastability"))
+                issues.append(
+                    Issue(
+                        file,
+                        line,
+                        "CDC_SINGLE_FLOP",
+                        f"'{src}' ({src_clk} -> {clk}) passes through only one flop ('{lhs}'); use two to stop metastability",
+                    )
+                )
             elif multibit.get(src, False):
-                issues.append(Issue(file, line, "CDC_MULTIBIT",
-                                    f"multi-bit '{src}' ({src_clk} -> {clk}) through a 2-flop synchronizer: bits can arrive in "
-                                    "different cycles; use Gray code, a handshake or an async FIFO"))
+                issues.append(
+                    Issue(
+                        file,
+                        line,
+                        "CDC_MULTIBIT",
+                        f"multi-bit '{src}' ({src_clk} -> {clk}) through a 2-flop synchronizer: bits can arrive in "
+                        "different cycles; use Gray code, a handshake or an async FIFO",
+                    )
+                )
     return issues
 
 
@@ -280,7 +366,9 @@ def collect_files(paths):
     files = []
     for p in map(Path, paths):
         if p.is_dir():
-            files += sorted(f for f in p.rglob("*") if f.suffix in (".v", ".sv", ".vh", ".svh"))
+            files += sorted(
+                f for f in p.rglob("*") if f.suffix in (".v", ".sv", ".vh", ".svh")
+            )
         else:
             files.append(p)
     return files
@@ -300,4 +388,6 @@ def report_text(issues, min_severity="INFO"):
     if not shown:
         return "No issues found.  " + summary
     rows = [[f"{i.file}:{i.line}", i.severity, i.rule, i.message] for i in shown]
-    return format_table(["Location", "Severity", "Rule", "Message"], rows) + "\n" + summary
+    return (
+        format_table(["Location", "Severity", "Rule", "Message"], rows) + "\n" + summary
+    )

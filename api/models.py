@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class SourceFile(BaseModel):
     """One text file sent by the browser."""
+
     name: str = Field(..., examples=["counter.v"])
     text: str
 
@@ -68,5 +69,7 @@ class SvaRequest(Files):
 
 
 class SdcRequest(SourceFile):
-    rtl: list[SourceFile] = []          # optional top-level RTL: port-name and I/O-coverage checks
+    rtl: list[SourceFile] = (
+        []
+    )  # optional top-level RTL: port-name and I/O-coverage checks
     module: str | None = None

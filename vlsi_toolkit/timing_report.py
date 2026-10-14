@@ -66,7 +66,9 @@ def _parse_sta_style(text):
     for block in blocks:
         block = "Startpoint:" + block
         slack = None
-        m = re.search(rf"(?m)^\s*({_NUM})?\s*slack\s*\((?:MET|VIOLATED)[^)]*\)\s*({_NUM})?", block)
+        m = re.search(
+            rf"(?m)^\s*({_NUM})?\s*slack\s*\((?:MET|VIOLATED)[^)]*\)\s*({_NUM})?", block
+        )
         if m:
             slack = float(m.group(1) if m.group(1) is not None else m.group(2))
         paths.append(
@@ -162,20 +164,40 @@ def report_text(paths, top=10):
     out = []
     summary = summarize(paths)
     rows = [
-        [check, s["paths"], s["violations"], f"{s['wns']:.3f}" if s["wns"] is not None else "-", f"{s['tns']:.3f}",
-         "FAIL" if s["violations"] else "PASS"]
+        [
+            check,
+            s["paths"],
+            s["violations"],
+            f"{s['wns']:.3f}" if s["wns"] is not None else "-",
+            f"{s['tns']:.3f}",
+            "FAIL" if s["violations"] else "PASS",
+        ]
         for check, s in summary.items()
     ]
     out.append("TIMING SUMMARY")
-    out.append(format_table(["Check", "Paths", "Violations", "WNS", "TNS", "Status"], rows))
+    out.append(
+        format_table(["Check", "Paths", "Violations", "WNS", "TNS", "Status"], rows)
+    )
 
-    worst = sorted((p for p in paths if p.slack is not None), key=lambda p: p.slack)[:top]
+    worst = sorted((p for p in paths if p.slack is not None), key=lambda p: p.slack)[
+        :top
+    ]
     out.append("")
     out.append(f"WORST {len(worst)} PATHS")
     out.append(
         format_table(
             ["#", "Check", "Slack", "Startpoint", "Endpoint", "Group"],
-            [[i + 1, p.check, f"{p.slack:.3f}", p.startpoint, p.endpoint, p.path_group] for i, p in enumerate(worst)],
+            [
+                [
+                    i + 1,
+                    p.check,
+                    f"{p.slack:.3f}",
+                    p.startpoint,
+                    p.endpoint,
+                    p.path_group,
+                ]
+                for i, p in enumerate(worst)
+            ],
         )
     )
 
@@ -198,10 +220,33 @@ def report_text(paths, top=10):
 def write_csv(paths, csv_path):
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["check", "startpoint", "endpoint", "path_group", "path_type", "arrival", "required", "slack", "status"])
+        writer.writerow(
+            [
+                "check",
+                "startpoint",
+                "endpoint",
+                "path_group",
+                "path_type",
+                "arrival",
+                "required",
+                "slack",
+                "status",
+            ]
+        )
         for p in paths:
-            writer.writerow([p.check, p.startpoint, p.endpoint, p.path_group, p.path_type,
-                             p.arrival, p.required, p.slack, "VIOLATED" if p.violated else "MET"])
+            writer.writerow(
+                [
+                    p.check,
+                    p.startpoint,
+                    p.endpoint,
+                    p.path_group,
+                    p.path_type,
+                    p.arrival,
+                    p.required,
+                    p.slack,
+                    "VIOLATED" if p.violated else "MET",
+                ]
+            )
 
 
 def plot_histogram(paths, png_path):
@@ -215,7 +260,13 @@ def plot_histogram(paths, png_path):
     for check, color in (("setup", "#3b6fd6"), ("hold", "#d98a1c")):
         slacks = [p.slack for p in paths if p.check == check and p.slack is not None]
         if slacks:
-            ax.hist(slacks, bins=20, alpha=0.75, label=f"{check} ({len(slacks)} paths)", color=color)
+            ax.hist(
+                slacks,
+                bins=20,
+                alpha=0.75,
+                label=f"{check} ({len(slacks)} paths)",
+                color=color,
+            )
     ax.axvline(0, color="#c0392b", linestyle="--", linewidth=1.5, label="slack = 0")
     ax.set_xlabel("Slack (ns)")
     ax.set_ylabel("Number of paths")

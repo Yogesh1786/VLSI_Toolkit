@@ -28,6 +28,7 @@ class DemoRequest(BaseModel):
 
 # ---------------------------------------------------------------- settings (remembered between sessions)
 
+
 def _settings_file():
     return history.data_dir() / "settings.json"
 
@@ -54,6 +55,7 @@ def _current_root():
 
 # ---------------------------------------------------------------- workspace
 
+
 @router.get("/workspace")
 def get_workspace():
     """The active workspace (the bundled examples until you open your own folder) and its files."""
@@ -63,7 +65,7 @@ def get_workspace():
     result["is_default"] = Path(root).resolve() == DEFAULT_WORKSPACE.resolve()
     result["hosted"] = history.hosted()
     if result["hosted"]:
-        result["root"] = "examples"        # do not reveal server paths
+        result["root"] = "examples"  # do not reveal server paths
         result["recent"] = []
     return result
 
@@ -71,8 +73,11 @@ def get_workspace():
 @router.post("/workspace/open")
 def open_workspace(req: OpenRequest):
     if history.hosted():
-        raise HTTPException(403, "Opening folders works only when the toolkit runs on your own computer. "
-                                 "The online version shows the bundled examples; use Upload on any tool page for your files.")
+        raise HTTPException(
+            403,
+            "Opening folders works only when the toolkit runs on your own computer. "
+            "The online version shows the bundled examples; use Upload on any tool page for your files.",
+        )
     path = Path(req.path.strip().strip('"')).expanduser()
     if not path.is_dir():
         raise HTTPException(404, f"Folder not found: {path}")
@@ -107,19 +112,32 @@ def analyze_workspace(req: AnalyzeRequest):
     root = _current_root()
     result = workspace.analyze(root)
     if req.save and result["metrics"]:
-        summary = {"checks": result["checks"], "files_analyzed": result["files_analyzed"]}
-        result["snapshot_id"] = history.save_snapshot(root, result["metrics"], summary, req.label)
+        summary = {
+            "checks": result["checks"],
+            "files_analyzed": result["files_analyzed"],
+        }
+        result["snapshot_id"] = history.save_snapshot(
+            root, result["metrics"], summary, req.label
+        )
     return result
 
 
 # ---------------------------------------------------------------- history
 
+
 @router.get("/history")
 def get_history(workspace: str | None = None):
     ws = workspace or _current_root()
-    return {"workspace": ws, "snapshots": history.list_snapshots(ws), "trends": history.trends(ws),
-            "metrics": {k: {"label": v[0], "unit": v[1], "better": v[2], "group": v[3]} for k, v in history.METRIC_INFO.items()},
-            "workspaces": history.workspaces()}
+    return {
+        "workspace": ws,
+        "snapshots": history.list_snapshots(ws),
+        "trends": history.trends(ws),
+        "metrics": {
+            k: {"label": v[0], "unit": v[1], "better": v[2], "group": v[3]}
+            for k, v in history.METRIC_INFO.items()
+        },
+        "workspaces": history.workspaces(),
+    }
 
 
 @router.delete("/history/{snapshot_id}")

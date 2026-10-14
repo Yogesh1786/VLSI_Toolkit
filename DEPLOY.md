@@ -9,10 +9,10 @@ Browser ──► https://vlsi-toolkit.vercel.app            (Vercel: React app 
 
 Two settings connect the two halves:
 
-| Setting                         | Set on   | Value                                     | Why                                                    |
-| ------------------------------- | -------- | ----------------------------------------- | ------------------------------------------------------ |
-| `VITE_API_URL`                  | Vercel   | the Render address                        | tells the React app where the API is                   |
-| `CORS_ORIGINS`                  | Render   | the Vercel address                        | lets the browser accept answers from another address   |
+| Setting        | Set on | Value              | Why                                                  |
+| -------------- | ------ | ------------------ | ---------------------------------------------------- |
+| `VITE_API_URL` | Vercel | the Render address | tells the React app where the API is                 |
+| `CORS_ORIGINS` | Render | the Vercel address | lets the browser accept answers from another address |
 
 Files used: `render.yaml` + `requirements.txt` + `.python-version` (Render), `web/vercel.json` (Vercel).
 
@@ -46,16 +46,16 @@ Later changes: `git add .` → `git commit -m "..."` → `git push`. Both Render
 
 **New + → Web Service** → pick the repository, then:
 
-| Field            | Value                                                     |
-| ---------------- | --------------------------------------------------------- |
-| Language         | Python 3                                                  |
-| Branch           | `main`                                                    |
-| Root Directory   | *(empty)*                                                 |
-| Build Command    | `pip install -r requirements.txt`                         |
-| Start Command    | `uvicorn api.main:app --host 0.0.0.0 --port $PORT`        |
-| Instance Type    | Free                                                      |
-| Health Check Path (Advanced) | `/api/health`                                 |
-| Environment Variable | `CORS_ORIGINS` = your Vercel address                  |
+| Field                        | Value                                              |
+| ---------------------------- | -------------------------------------------------- |
+| Language                     | Python 3                                           |
+| Branch                       | `main`                                             |
+| Root Directory               | _(empty)_                                          |
+| Build Command                | `pip install -r requirements.txt`                  |
+| Start Command                | `uvicorn api.main:app --host 0.0.0.0 --port $PORT` |
+| Instance Type                | Free                                               |
+| Health Check Path (Advanced) | `/api/health`                                      |
+| Environment Variable         | `CORS_ORIGINS` = your Vercel address               |
 
 </details>
 
@@ -63,7 +63,7 @@ Later changes: `git add .` → `git commit -m "..."` → `git push`. Both Render
 
 1. Sign in at https://vercel.com with **GitHub** → **Add New… → Project** → import `VLSI_Toolkit`.
 2. Settings:
-   - **Root Directory:** click *Edit* and choose **`web`** (important)
+   - **Root Directory:** click _Edit_ and choose **`web`** (important)
    - **Framework Preset:** Vite (detected)
    - Build / Output: leave the defaults (`npm run build`, `dist`)
    - **Environment Variables:** `VITE_API_URL` = `https://vlsi-toolkit-api.onrender.com` (your Render address, no `/` at the end)
@@ -76,7 +76,7 @@ Later changes: `git add .` → `git commit -m "..."` → `git push`. Both Render
    Several addresses are allowed, separated by commas (no spaces needed, no `/` at the end).
 2. Open the Vercel address. The tools should load the examples and show results.
 
-Optional, for Vercel *preview* deployments (each branch or pull request gets its own address): add
+Optional, for Vercel _preview_ deployments (each branch or pull request gets its own address): add
 `CORS_ORIGIN_REGEX` = `https://vlsi-toolkit-.*\.vercel\.app` on Render.
 
 > `VITE_API_URL` is baked in when the React app is **built**. If you change it on Vercel, redeploy
@@ -86,12 +86,12 @@ Optional, for Vercel *preview* deployments (each branch or pull request gets its
 
 ## What is different online
 
-| Feature                      | On your computer                | Online                                                                 |
-| ---------------------------- | ------------------------------- | ---------------------------------------------------------------------- |
-| Tools with Example / Upload  | ✔                               | ✔                                                                      |
-| Project Workspace            | Open any folder                 | Bundled `examples/` only. Opening folders is blocked, so visitors can't read files on the server |
-| Trends / saved runs          | Kept in `~/.vlsi_toolkit/`      | Temporary: shared by all visitors, **lost on every deploy or restart** |
-| ngspice sweep `--run`        | If ngspice is installed         | Not available                                                          |
+| Feature                     | On your computer           | Online                                                                                           |
+| --------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------ |
+| Tools with Example / Upload | ✔                          | ✔                                                                                                |
+| Project Workspace           | Open any folder            | Bundled `examples/` only. Opening folders is blocked, so visitors can't read files on the server |
+| Trends / saved runs         | Kept in `~/.vlsi_toolkit/` | Temporary: shared by all visitors, **lost on every deploy or restart**                           |
+| ngspice sweep `--run`       | If ngspice is installed    | Not available                                                                                    |
 
 Hosted mode switches on automatically on Render (`RENDER` variable) and Vercel. On other hosts set `VT_HOSTED=1`.
 
@@ -104,11 +104,11 @@ retries every 15 s by itself). Free instances have 0.1 CPU and 512 MB RAM, enoug
 
 ## Troubleshooting
 
-| Symptom                                               | Fix                                                                                       |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Browser console: *blocked by CORS policy*             | `CORS_ORIGINS` on Render must be exactly the Vercel address (`https://…vercel.app`, no `/` at the end). Save → redeploy |
-| Every tool says *Cannot reach the API server at …*    | Render is waking up (wait 1 min), or `VITE_API_URL` is wrong. Open `<render address>/api/health` directly |
-| Tools call `vercel.app/api/...` and get 404           | `VITE_API_URL` was not set when the site was built: set it and **Redeploy**               |
-| Refreshing a page such as `/lint` gives 404 on Vercel | Root Directory must be `web` so `web/vercel.json` (page fallback) is used                 |
-| Render build fails on the Python version              | `.python-version` sets 3.12; check the build log, or set `PYTHON_VERSION` to a full version such as `3.12.8` |
-| *API server is outdated* banner                       | Render is still running the old version: wait for its deploy to finish, then refresh      |
+| Symptom                                               | Fix                                                                                                                     |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Browser console: _blocked by CORS policy_             | `CORS_ORIGINS` on Render must be exactly the Vercel address (`https://…vercel.app`, no `/` at the end). Save → redeploy |
+| Every tool says _Cannot reach the API server at …_    | Render is waking up (wait 1 min), or `VITE_API_URL` is wrong. Open `<render address>/api/health` directly               |
+| Tools call `vercel.app/api/...` and get 404           | `VITE_API_URL` was not set when the site was built: set it and **Redeploy**                                             |
+| Refreshing a page such as `/lint` gives 404 on Vercel | Root Directory must be `web` so `web/vercel.json` (page fallback) is used                                               |
+| Render build fails on the Python version              | `.python-version` sets 3.12; check the build log, or set `PYTHON_VERSION` to a full version such as `3.12.8`            |
+| _API server is outdated_ banner                       | Render is still running the old version: wait for its deploy to finish, then refresh                                    |

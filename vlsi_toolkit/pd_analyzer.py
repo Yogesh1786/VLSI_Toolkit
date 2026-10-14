@@ -122,7 +122,10 @@ def parse_def(text):
     if m := re.search(r"UNITS\s+DISTANCE\s+MICRONS\s+(\d+)", text):
         d.dbu = int(m.group(1))
     if m := re.search(r"DIEAREA\s+((?:\(\s*-?\d+\s+-?\d+\s*\)\s*)+);", text):
-        pts = [(int(x), int(y)) for x, y in re.findall(r"\(\s*(-?\d+)\s+(-?\d+)\s*\)", m.group(1))]
+        pts = [
+            (int(x), int(y))
+            for x, y in re.findall(r"\(\s*(-?\d+)\s+(-?\d+)\s*\)", m.group(1))
+        ]
         xs, ys = [p[0] for p in pts], [p[1] for p in pts]
         d.die = (min(xs), min(ys), max(xs), max(ys))
         d.die_area_dbu = _polygon_area(pts)
@@ -133,18 +136,36 @@ def parse_def(text):
         re.M,
     )
     for m in row_re.finditer(text):
-        d.rows.append(Row(m.group(1), m.group(2), int(m.group(3)), int(m.group(4)),
-                          int(m.group(5) or 1), int(m.group(6) or 1), int(m.group(7) or 0)))
+        d.rows.append(
+            Row(
+                m.group(1),
+                m.group(2),
+                int(m.group(3)),
+                int(m.group(4)),
+                int(m.group(5) or 1),
+                int(m.group(6) or 1),
+                int(m.group(7) or 0),
+            )
+        )
 
-    if m := re.search(r"^\s*COMPONENTS\s+\d+\s*;(.*?)^\s*END\s+COMPONENTS", text, re.M | re.S):
-        place_re = re.compile(r"\+\s*(PLACED|FIXED|COVER)\s*\(\s*(-?\d+)\s+(-?\d+)\s*\)\s*(\S+)")
+    if m := re.search(
+        r"^\s*COMPONENTS\s+\d+\s*;(.*?)^\s*END\s+COMPONENTS", text, re.M | re.S
+    ):
+        place_re = re.compile(
+            r"\+\s*(PLACED|FIXED|COVER)\s*\(\s*(-?\d+)\s+(-?\d+)\s*\)\s*(\S+)"
+        )
         for stmt in m.group(1).split(";"):
             tokens = stmt.split()
             if len(tokens) < 3 or tokens[0] != "-":
                 continue
             comp = Component(tokens[1], tokens[2], "UNPLACED")
             if p := place_re.search(stmt):
-                comp.status, comp.x, comp.y, comp.orient = p.group(1), int(p.group(2)), int(p.group(3)), p.group(4)
+                comp.status, comp.x, comp.y, comp.orient = (
+                    p.group(1),
+                    int(p.group(2)),
+                    int(p.group(3)),
+                    p.group(4),
+                )
             d.components.append(comp)
 
     if m := re.search(r"^\s*PINS\s+(\d+)\s*;", text, re.M):
@@ -170,9 +191,19 @@ def parse_files(def_path, lef_paths=()):
 # Analysis
 # ---------------------------------------------------------------------------
 
-CATEGORIES = ["Macro", "Flip-flop", "Latch", "Clock cell", "Buffer/Inverter", "Logic", "Physical-only"]
+CATEGORIES = [
+    "Macro",
+    "Flip-flop",
+    "Latch",
+    "Clock cell",
+    "Buffer/Inverter",
+    "Logic",
+    "Physical-only",
+]
 
-_PHYSICAL_RE = re.compile(r"fill|decap|tap|endcap|antenna|diode|phy_|spacer|welltie|tie(hi|lo)", re.I)
+_PHYSICAL_RE = re.compile(
+    r"fill|decap|tap|endcap|antenna|diode|phy_|spacer|welltie|tie(hi|lo)", re.I
+)
 
 
 def base_cell_name(cell):
@@ -185,7 +216,11 @@ def categorize(cell, lef=None):
     macro = lef.macros.get(cell) if lef else None
     if macro and macro.cls in ("BLOCK", "PAD", "RING"):
         return "Macro"
-    if macro and macro.cls in ("ENDCAP",) or (macro and macro.subclass in ("SPACER", "WELLTAP", "ANTENNACELL")):
+    if (
+        macro
+        and macro.cls in ("ENDCAP",)
+        or (macro and macro.subclass in ("SPACER", "WELLTAP", "ANTENNACELL"))
+    ):
         return "Physical-only"
     base = base_cell_name(cell)
     if _PHYSICAL_RE.search(base):
@@ -239,7 +274,9 @@ def analyze(d, lef=None):
 
     die_um2 = d.die_area_dbu / d.dbu**2
     core_um2 = core_area_um2(d, lef)
-    std_area = sum(stats[c]["area"] for c in CATEGORIES if c not in ("Macro", "Physical-only"))
+    std_area = sum(
+        stats[c]["area"] for c in CATEGORIES if c not in ("Macro", "Physical-only")
+    )
     macro_area = stats["Macro"]["area"]
     util = None
     if has_lef and core_um2 > macro_area:
@@ -272,7 +309,10 @@ def density_grid(d, lef=None, cols=48, rows=16):
         return None, set()
     grid = [[0.0] * cols for _ in range(rows)]
     for c in d.components:
-        if c.status == "UNPLACED" or categorize(c.cell, lef) in ("Physical-only", "Macro"):
+        if c.status == "UNPLACED" or categorize(c.cell, lef) in (
+            "Physical-only",
+            "Macro",
+        ):
             continue
         cx = min(cols - 1, max(0, int((c.x - x1) / (x2 - x1) * cols)))
         cy = min(rows - 1, max(0, int((c.y - y1) / (y2 - y1) * rows)))
@@ -307,7 +347,13 @@ def density_map(d, lef=None, cols=48, rows=16):
                 row += "M"
             else:
                 v = grid[gy][gx] / peak
-                row += _RAMP[min(len(_RAMP) - 1, int(v * (len(_RAMP) - 1) + 0.999)) if v > 0 else 0]
+                row += _RAMP[
+                    (
+                        min(len(_RAMP) - 1, int(v * (len(_RAMP) - 1) + 0.999))
+                        if v > 0
+                        else 0
+                    )
+                ]
         lines.append("|" + row + "|")
     lines.append("+" + "-" * cols + "+")
     lines.append(f"density: ' ' empty  {_RAMP[1:]}  dense    M = macro")
@@ -324,8 +370,10 @@ def report_text(d, lef=None, top=10):
         f"Pins: {d.pins}   Nets: {d.nets}   Special nets: {d.special_nets}",
     ]
     if a["utilization"] is not None:
-        out.append(f"Std-cell area: {a['std_area']:,.1f} um^2   Macro area: {a['macro_area']:,.1f} um^2   "
-                   f"UTILIZATION: {a['utilization']:.1%}")
+        out.append(
+            f"Std-cell area: {a['std_area']:,.1f} um^2   Macro area: {a['macro_area']:,.1f} um^2   "
+            f"UTILIZATION: {a['utilization']:.1%}"
+        )
     elif not a["has_lef"]:
         out.append("(give --lef files to get cell areas and utilization)")
 
@@ -336,28 +384,63 @@ def report_text(d, lef=None, top=10):
     for cat in CATEGORIES:
         s = a["categories"][cat]
         if s["count"]:
-            rows.append([cat, s["count"], f"{s['count'] / total:.1%}", f"{s['area']:,.1f}" if a["has_lef"] else "-"])
-    rows.append(["TOTAL", len(d.components), "100%", f"{sum(s['area'] for s in a['categories'].values()):,.1f}" if a["has_lef"] else "-"])
+            rows.append(
+                [
+                    cat,
+                    s["count"],
+                    f"{s['count'] / total:.1%}",
+                    f"{s['area']:,.1f}" if a["has_lef"] else "-",
+                ]
+            )
+    rows.append(
+        [
+            "TOTAL",
+            len(d.components),
+            "100%",
+            (
+                f"{sum(s['area'] for s in a['categories'].values()):,.1f}"
+                if a["has_lef"]
+                else "-"
+            ),
+        ]
+    )
     out.append(format_table(["Category", "Instances", "Share", "Area um^2"], rows))
 
     out.append("")
     out.append(f"TOP {top} CELL TYPES")
     top_cells = sorted(a["per_cell"].items(), key=lambda kv: -kv[1]["count"])[:top]
-    out.append(format_table(
-        ["Cell", "Category", "Count", "Area um^2"],
-        [[n, v["category"], v["count"], f"{v['area']:,.1f}" if a["has_lef"] else "-"] for n, v in top_cells],
-    ))
+    out.append(
+        format_table(
+            ["Cell", "Category", "Count", "Area um^2"],
+            [
+                [
+                    n,
+                    v["category"],
+                    v["count"],
+                    f"{v['area']:,.1f}" if a["has_lef"] else "-",
+                ]
+                for n, v in top_cells
+            ],
+        )
+    )
 
     out.append("")
-    out.append("PLACEMENT STATUS: " + "   ".join(f"{k} {v}" for k, v in sorted(a["status"].items())))
+    out.append(
+        "PLACEMENT STATUS: "
+        + "   ".join(f"{k} {v}" for k, v in sorted(a["status"].items()))
+    )
     unplaced = [c.name for c in d.components if c.status == "UNPLACED"]
     if unplaced:
-        out.append(f"WARNING: {len(unplaced)} unplaced instance(s): {', '.join(unplaced[:8])}"
-                   + (" ..." if len(unplaced) > 8 else ""))
+        out.append(
+            f"WARNING: {len(unplaced)} unplaced instance(s): {', '.join(unplaced[:8])}"
+            + (" ..." if len(unplaced) > 8 else "")
+        )
     if lef and lef.macros:
         missing = sorted({c.cell for c in d.components if c.cell not in lef.macros})
         if missing:
-            out.append(f"WARNING: {len(missing)} cell type(s) not found in LEF: {', '.join(missing[:8])}")
+            out.append(
+                f"WARNING: {len(missing)} cell type(s) not found in LEF: {', '.join(missing[:8])}"
+            )
     out.append("")
     out.append("PLACEMENT DENSITY MAP")
     out.append(density_map(d, lef))

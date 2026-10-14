@@ -3,7 +3,7 @@
 services:
   - type: web
     name: vlsi-toolkit-api
-    runtime: python                  # Python version comes from .python-version (3.12)
+    runtime: python # Python version comes from .python-version (3.12)
     plan: free
     region: singapore
     buildCommand: pip install -r requirements.txt
@@ -11,5 +11,5 @@ services:
     healthCheckPath: /api/health
     autoDeployTrigger: commit
     envVars:
-      - key: CORS_ORIGINS            # your Vercel address, e.g. https://vlsi-toolkit.vercel.app
+      - key: CORS_ORIGINS # your Vercel address, e.g. https://vlsi-toolkit.vercel.app
         sync: false

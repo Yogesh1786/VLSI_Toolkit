@@ -29,7 +29,11 @@ def _default_unit(text):
 
 def parse_report(text):
     unit = _default_unit(text)
-    leak_unit = (m.group(1).lower() if (m := re.search(r"Leakage Power Units\s*=\s*1\s*(\w+)", text)) else unit)
+    leak_unit = (
+        m.group(1).lower()
+        if (m := re.search(r"Leakage Power Units\s*=\s*1\s*(\w+)", text))
+        else unit
+    )
 
     def summary(label, du=unit):
         m = re.search(rf"{label}\s*=?\s*({_NUM})\s*(W|mW|uW|nW|pW)?", text, re.I)
@@ -44,12 +48,18 @@ def parse_report(text):
 
     # power groups: name followed by 4 numbers (internal switching leakage total) and maybe (pct %)
     groups = []
-    grp_re = re.compile(rf"(?m)^\s*(io_pad|memory|black_box|clock_network|register|sequential|combinational|"
-                        rf"[a-z_]+_network|pad|macro)\s+({_NUM})\s*(\w*W)?\s+({_NUM})\s*(\w*W)?\s+({_NUM})\s*(\w*W)?\s+({_NUM})\s*(\w*W)?")
+    grp_re = re.compile(
+        rf"(?m)^\s*(io_pad|memory|black_box|clock_network|register|sequential|combinational|"
+        rf"[a-z_]+_network|pad|macro)\s+({_NUM})\s*(\w*W)?\s+({_NUM})\s*(\w*W)?\s+({_NUM})\s*(\w*W)?\s+({_NUM})\s*(\w*W)?"
+    )
     for m in grp_re.finditer(text):
-        g = {"group": m.group(1), "internal": _mw(m.group(2), m.group(3) or None, unit),
-             "switching": _mw(m.group(4), m.group(5) or None, unit), "leakage": _mw(m.group(6), m.group(7) or None, leak_unit),
-             "total": _mw(m.group(8), m.group(9) or None, unit)}
+        g = {
+            "group": m.group(1),
+            "internal": _mw(m.group(2), m.group(3) or None, unit),
+            "switching": _mw(m.group(4), m.group(5) or None, unit),
+            "leakage": _mw(m.group(6), m.group(7) or None, leak_unit),
+            "total": _mw(m.group(8), m.group(9) or None, unit),
+        }
         groups.append(g)
 
     # hierarchy table rows: indented name [ (design) ] then 4 numbers then percent
@@ -62,13 +72,24 @@ def parse_report(text):
             continue
         if not in_hier:
             continue
-        m = re.match(rf"^(\s*)(\S+)(?:\s+\((\S+)\))?\s+({_NUM})\s+({_NUM})\s+({_NUM})\s+({_NUM})\s+({_NUM})\s*$", line)
+        m = re.match(
+            rf"^(\s*)(\S+)(?:\s+\((\S+)\))?\s+({_NUM})\s+({_NUM})\s+({_NUM})\s+({_NUM})\s+({_NUM})\s*$",
+            line,
+        )
         if m:
             depth = len(m.group(1).replace("\t", "  ")) // 2
-            hierarchy.append({"name": m.group(2), "design": m.group(3) or m.group(2), "depth": depth,
-                              "switching": _mw(m.group(4), None, unit), "internal": _mw(m.group(5), None, unit),
-                              "leakage": _mw(m.group(6), None, unit), "total": _mw(m.group(7), None, unit),
-                              "percent": float(m.group(8))})
+            hierarchy.append(
+                {
+                    "name": m.group(2),
+                    "design": m.group(3) or m.group(2),
+                    "depth": depth,
+                    "switching": _mw(m.group(4), None, unit),
+                    "internal": _mw(m.group(5), None, unit),
+                    "leakage": _mw(m.group(6), None, unit),
+                    "total": _mw(m.group(7), None, unit),
+                    "percent": float(m.group(8)),
+                }
+            )
         elif hierarchy and line.strip() and not line.strip().startswith("-"):
             in_hier = False
     if hierarchy and hierarchy[0]["depth"]:
@@ -76,19 +97,36 @@ def parse_report(text):
         for h in hierarchy:
             h["depth"] -= base
 
-    if totals["dynamic"] is None and totals["internal"] is not None and totals["switching"] is not None:
+    if (
+        totals["dynamic"] is None
+        and totals["internal"] is not None
+        and totals["switching"] is not None
+    ):
         totals["dynamic"] = totals["internal"] + totals["switching"]
     if totals["dynamic"] is None and hierarchy:
         totals["internal"] = totals["internal"] or hierarchy[0]["internal"]
         totals["switching"] = totals["switching"] or hierarchy[0]["switching"]
         totals["leakage"] = totals["leakage"] or hierarchy[0]["leakage"]
         totals["dynamic"] = totals["internal"] + totals["switching"]
-    totals["total"] = (totals["dynamic"] or 0) + (totals["leakage"] or 0) if totals["dynamic"] is not None else None
+    totals["total"] = (
+        (totals["dynamic"] or 0) + (totals["leakage"] or 0)
+        if totals["dynamic"] is not None
+        else None
+    )
     if totals["total"] is None:
-        raise ValueError("Not a recognised power report (expected report_power summary, power groups or hierarchy)")
+        raise ValueError(
+            "Not a recognised power report (expected report_power summary, power groups or hierarchy)"
+        )
     design = re.search(r"Design\s*:\s*(\S+)", text)
-    return {"design": design.group(1) if design else (hierarchy[0]["name"] if hierarchy else None),
-            "unit": "mW", "totals": totals, "groups": groups, "hierarchy": hierarchy}
+    return {
+        "design": (
+            design.group(1) if design else (hierarchy[0]["name"] if hierarchy else None)
+        ),
+        "unit": "mW",
+        "totals": totals,
+        "groups": groups,
+        "hierarchy": hierarchy,
+    }
 
 
 def parse_file(path):

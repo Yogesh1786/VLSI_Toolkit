@@ -5,7 +5,14 @@ from collections import OrderedDict
 
 from fastapi import APIRouter, HTTPException
 
-from vlsi_toolkit import liberty, pd_analyzer, power_report, sdc_check, synth_report, timing_report
+from vlsi_toolkit import (
+    liberty,
+    pd_analyzer,
+    power_report,
+    sdc_check,
+    synth_report,
+    timing_report,
+)
 
 from ..models import FloorplanRequest, LibertyCellRequest, SdcRequest, SourceFile
 
@@ -15,7 +22,10 @@ router = APIRouter(prefix="/api/pd", tags=["Physical design"])
 @router.post("/timing")
 def timing(req: SourceFile):
     paths = timing_report.parse_report(req.text)
-    return {"paths": timing_report.to_dicts(paths), "summary": timing_report.summarize(paths)}
+    return {
+        "paths": timing_report.to_dicts(paths),
+        "summary": timing_report.summarize(paths),
+    }
 
 
 @router.post("/floorplan")
@@ -30,15 +40,36 @@ def floorplan(req: FloorplanRequest):
     rows = max(8, round(cols * (y2 - y1) / max(x2 - x1, 1)))
     grid, macros = pd_analyzer.density_grid(d, lef, cols=cols, rows=rows)
     return {
-        "design": d.design, "dbu": d.dbu, "die_w_um": (x2 - x1) / d.dbu, "die_h_um": (y2 - y1) / d.dbu,
-        "die_um2": a["die_um2"], "core_um2": a["core_um2"], "rows": len(d.rows), "pins": d.pins, "nets": d.nets,
-        "instances": len(d.components), "utilization": a["utilization"], "std_area": a["std_area"],
-        "macro_area": a["macro_area"], "has_lef": a["has_lef"], "status": a["status"],
-        "categories": [{"category": c, **v} for c, v in a["categories"].items() if v["count"]],
-        "cells": sorted(({"cell": n, **v} for n, v in a["per_cell"].items()), key=lambda c: -c["count"]),
+        "design": d.design,
+        "dbu": d.dbu,
+        "die_w_um": (x2 - x1) / d.dbu,
+        "die_h_um": (y2 - y1) / d.dbu,
+        "die_um2": a["die_um2"],
+        "core_um2": a["core_um2"],
+        "rows": len(d.rows),
+        "pins": d.pins,
+        "nets": d.nets,
+        "instances": len(d.components),
+        "utilization": a["utilization"],
+        "std_area": a["std_area"],
+        "macro_area": a["macro_area"],
+        "has_lef": a["has_lef"],
+        "status": a["status"],
+        "categories": [
+            {"category": c, **v} for c, v in a["categories"].items() if v["count"]
+        ],
+        "cells": sorted(
+            ({"cell": n, **v} for n, v in a["per_cell"].items()),
+            key=lambda c: -c["count"],
+        ),
         "unplaced": [c.name for c in d.components if c.status == "UNPLACED"],
-        "missing_in_lef": sorted({c.cell for c in d.components if c.cell not in lef.macros}) if lef.macros else [],
-        "grid": grid, "macro_bins": sorted(macros),
+        "missing_in_lef": (
+            sorted({c.cell for c in d.components if c.cell not in lef.macros})
+            if lef.macros
+            else []
+        ),
+        "grid": grid,
+        "macro_bins": sorted(macros),
     }
 
 
@@ -62,10 +93,18 @@ def library(req: SourceFile):
     lib = _library(req.text)
     if not lib["cells"]:
         return {"error": "No cells found. Is this a Liberty (.lib) file?"}
-    cells = [{k: v for k, v in c.items() if k not in ("pins", "arcs")} | {
-        "pin_count": len(c["pins"]), "arc_count": len(c["arcs"]),
-        "max_input_cap": max((p["capacitance"] or 0 for p in c["pins"] if p["direction"] == "input"), default=None),
-    } for c in lib["cells"]]
+    cells = [
+        {k: v for k, v in c.items() if k not in ("pins", "arcs")}
+        | {
+            "pin_count": len(c["pins"]),
+            "arc_count": len(c["arcs"]),
+            "max_input_cap": max(
+                (p["capacitance"] or 0 for p in c["pins"] if p["direction"] == "input"),
+                default=None,
+            ),
+        }
+        for c in lib["cells"]
+    ]
     return {k: v for k, v in lib.items() if k != "cells"} | {"cells": cells}
 
 
@@ -97,7 +136,9 @@ def power(req: SourceFile):
 def sdc(req: SdcRequest):
     top, ports = None, None
     if req.rtl:
-        top, ports = sdc_check.ports_from_rtl("\n".join(f.text for f in req.rtl), req.module)
+        top, ports = sdc_check.ports_from_rtl(
+            "\n".join(f.text for f in req.rtl), req.module
+        )
         if not ports:
             raise HTTPException(400, "No Verilog module found in the RTL file(s)")
     return sdc_check.check(req.text, ports) | {"rtl_top": top, "rtl_ports": ports}

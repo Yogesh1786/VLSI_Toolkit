@@ -22,7 +22,13 @@ import json
 import re
 from dataclasses import asdict, dataclass, field
 
-from .common import find_matching, format_table, split_top_level, strip_comments, try_eval
+from .common import (
+    find_matching,
+    format_table,
+    split_top_level,
+    strip_comments,
+    try_eval,
+)
 
 DIRECTIONS = ("input", "output", "inout")
 NET_TYPES = r"(?:wire|reg|logic|bit|tri|var|wand|wor|uwire)"
@@ -196,7 +202,11 @@ def _parse_ansi_ports(port_text, module):
             port = Port(
                 name=m.group("name"),
                 direction=prev.direction,
-                net_type=_net_type(m.group("types"), prev.net_type) if has_own else prev.net_type,
+                net_type=(
+                    _net_type(m.group("types"), prev.net_type)
+                    if has_own
+                    else prev.net_type
+                ),
                 signed=(m.group("sign") == "signed") if has_own else prev.signed,
                 packed_range=rng if has_own else prev.packed_range,
             )
@@ -333,7 +343,9 @@ def pick_module(modules, name=None):
     for m in modules:
         if m.name == name:
             return m
-    raise ValueError(f"module '{name}' not found (available: {', '.join(m.name for m in modules)})")
+    raise ValueError(
+        f"module '{name}' not found (available: {', '.join(m.name for m in modules)})"
+    )
 
 
 # --------------------------------------------------------------------------
@@ -343,15 +355,29 @@ def pick_module(modules, name=None):
 
 def describe(module):
     """Human-readable summary of one module."""
-    lines = [f"Module: {module.name}   (style: {'ANSI' if module.ansi else 'non-ANSI'})"]
+    lines = [
+        f"Module: {module.name}   (style: {'ANSI' if module.ansi else 'non-ANSI'})"
+    ]
     if module.parameters:
         rows = [
-            [p.name, p.default, "" if p.value is None else p.value, "localparam" if p.local else "parameter"]
+            [
+                p.name,
+                p.default,
+                "" if p.value is None else p.value,
+                "localparam" if p.local else "parameter",
+            ]
             for p in module.parameters
         ]
         lines.append(format_table(["Parameter", "Default", "Value", "Kind"], rows))
     rows = [
-        [p.name, p.direction, p.net_type, "signed" if p.signed else "", p.packed_range or "-", p.width_str]
+        [
+            p.name,
+            p.direction,
+            p.net_type,
+            "signed" if p.signed else "",
+            p.packed_range or "-",
+            p.width_str,
+        ]
         for p in module.ports
     ]
     lines.append(format_table(["Port", "Dir", "Type", "Sign", "Range", "Width"], rows))
