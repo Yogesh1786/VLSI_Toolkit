@@ -3,6 +3,30 @@
 /* dark mode is switched by the "dark" class on <html> (see ThemeToggle) */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ---------------------------------------------------------------- cursors */
+/* Tailwind v4 gives buttons the default arrow; show the hand on everything clickable,
+   and "not allowed" on disabled controls. Applies to every current and future button. */
+@layer base {
+  button,
+  [role="button"],
+  select,
+  summary,
+  label:has(> input[type="checkbox"]),
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"],
+  input[type="file"],
+  input[type="file"]::file-selector-button {
+    cursor: pointer;
+  }
+  button:disabled,
+  select:disabled,
+  input:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
 /* ---------------------------------------------------------------- tokens */
 :root {
   --bg: #f4f6fb;
