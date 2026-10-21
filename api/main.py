@@ -19,8 +19,9 @@ from fastapi.responses import JSONResponse
 
 from vlsi_toolkit import __version__
 
+from .activity_log import ActivityLogger
 from .errors import install_error_handlers
-from .routers import analog, compare, general, physical, rtl, verification, workspace
+from .routers import activity, analog, compare, general, physical, rtl, verification, workspace
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
 ALL_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
@@ -56,8 +57,9 @@ def create_app() -> FastAPI:
         description="Analysis endpoints for the VLSI Toolkit web app. Everything runs locally.",
     )
     install_error_handlers(app)
-    _allow_cross_origin(app)
-    for module in (general, workspace, rtl, verification, physical, analog, compare):
+    app.add_middleware(ActivityLogger)  # one record per tool run (summary only)
+    _allow_cross_origin(app)  # added last = outermost, so CORS also covers errors
+    for module in (general, workspace, activity, rtl, verification, physical, analog, compare):
         app.include_router(module.router)
 
     # Registered after the routers: catches any /api/... address that matched no endpoint,

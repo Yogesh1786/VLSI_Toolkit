@@ -74,6 +74,13 @@ function highlight(line: string, lang: Lang): ReactNode[] {
   return out;
 }
 
+export type { Lang };
+
+/** Syntax-highlighting language for a file name (used by the example preview). */
+export function langFor(name: string): Lang {
+  return /\.(s?vh?|svh)$/i.test(name) ? "verilog" : /\.py$/i.test(name) ? "python" : /\.(c|h)$/i.test(name) ? "c" : "text";
+}
+
 export function CodeBlock({
   code,
   lang = "text",

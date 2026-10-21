@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Boxes, Cpu, Download, Layers } from "lucide-react";
-import { useAnalysis, type SourceFile } from "../lib/api";
+import { useAnalysis, type SourceFile, initialExample } from "../lib/api";
 import { FileSource } from "../components/FileSource";
 import { DataTable } from "../components/DataTable";
 import {
@@ -51,7 +51,9 @@ const area = (v: number | null | undefined) =>
 export default function SynthesisReport() {
   const [files, setFiles] = useState<SourceFile[] | null>(null);
   const [tab, setTab] = useState("modules");
-  const [example, setExample] = useState("signoff/synth_yosys.rpt");
+  const [example, setExample] = useState<string>(() =>
+    initialExample("signoff/synth_yosys.rpt", { "signoff/synth_yosys.rpt": "signoff/synth_yosys.rpt", "signoff/synth_dc_area.rpt": "signoff/synth_dc_area.rpt" }),
+  );
   const file = files?.[0] ?? null;
   const {
     data: r,

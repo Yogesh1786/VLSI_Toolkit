@@ -22,6 +22,8 @@ import AssertionGen from "./pages/AssertionGen";
 import SynthesisReport from "./pages/SynthesisReport";
 import PowerReport from "./pages/PowerReport";
 import SdcChecker from "./pages/SdcChecker";
+import Activity from "./pages/Activity";
+import Examples from "./pages/Examples";
 import { EmptyState } from "./components/ui";
 import { SearchX } from "lucide-react";
 
@@ -51,6 +53,8 @@ export default function App() {
         <Route path="/power" element={<PowerReport />} />
         <Route path="/sdc" element={<SdcChecker />} />
         <Route path="/compare" element={<Compare />} />
+        <Route path="/activity" element={<Activity />} />
+        <Route path="/examples" element={<Examples />} />
         <Route
           path="*"
           element={

@@ -1,20 +1,17 @@
-"""Run history: workspace analysis snapshots stored in a local SQLite database.
+"""Run history: workspace analysis snapshots (the Trends page).
 
-The database lives in ~/.vlsi_toolkit/history.db (override with the
-VT_DATA_DIR environment variable). Nothing leaves the computer.
+Stored in MongoDB when MONGODB_URI is set (see store.py), otherwise in the local
+SQLite file ~/.vlsi_toolkit/history.db (override the folder with VT_DATA_DIR).
 
     save_snapshot(workspace, metrics, summary, label)
     list_snapshots(workspace)      -> newest first
     trends(workspace)              -> {metric: [(timestamp, value), ...]} oldest first
 """
 
-import json
 import os
 import random
-import sqlite3
 import tempfile
 import time
-from contextlib import closing
 from pathlib import Path
 
 METRIC_INFO = {  # label, unit, better ("up" / "down"), group
@@ -67,84 +64,33 @@ def data_dir():
     return d
 
 
-def _connect():
-    con = sqlite3.connect(data_dir() / "history.db")
-    con.row_factory = sqlite3.Row
-    con.execute("""CREATE TABLE IF NOT EXISTS snapshots (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        ts REAL NOT NULL,
-        workspace TEXT NOT NULL,
-        label TEXT NOT NULL DEFAULT '',
-        metrics TEXT NOT NULL,
-        summary TEXT NOT NULL DEFAULT '{}',
-        demo INTEGER NOT NULL DEFAULT 0)""")
-    con.execute("CREATE INDEX IF NOT EXISTS idx_ws_ts ON snapshots (workspace, ts)")
-    return con
+def _store():
+    from .store import get_store
 
-
-def _row(r):
-    return {
-        "id": r["id"],
-        "ts": r["ts"],
-        "workspace": r["workspace"],
-        "label": r["label"],
-        "metrics": json.loads(r["metrics"]),
-        "summary": json.loads(r["summary"]),
-        "demo": bool(r["demo"]),
-    }
+    return get_store()
 
 
 def save_snapshot(workspace, metrics, summary=None, label="", ts=None, demo=False):
-    with closing(_connect()) as con, con:
-        cur = con.execute(
-            "INSERT INTO snapshots (ts, workspace, label, metrics, summary, demo) VALUES (?,?,?,?,?,?)",
-            (
-                ts or time.time(),
-                str(workspace),
-                label,
-                json.dumps(metrics),
-                json.dumps(summary or {}),
-                int(demo),
-            ),
-        )
-        return cur.lastrowid
+    return _store().add_snapshot({
+        "ts": ts or time.time(), "workspace": str(workspace), "label": label,
+        "metrics": metrics, "summary": summary or {}, "demo": bool(demo),
+    })
 
 
 def list_snapshots(workspace=None, limit=500):
-    with closing(_connect()) as con:
-        if workspace:
-            rows = con.execute(
-                "SELECT * FROM snapshots WHERE workspace=? ORDER BY ts DESC LIMIT ?",
-                (str(workspace), limit),
-            )
-        else:
-            rows = con.execute(
-                "SELECT * FROM snapshots ORDER BY ts DESC LIMIT ?", (limit,)
-            )
-        return [_row(r) for r in rows]
+    return _store().list_snapshots(str(workspace) if workspace else None, limit)
 
 
 def workspaces():
-    with closing(_connect()) as con:
-        return [
-            {"workspace": r[0], "snapshots": r[1], "last": r[2]}
-            for r in con.execute(
-                "SELECT workspace, COUNT(*), MAX(ts) FROM snapshots GROUP BY workspace ORDER BY MAX(ts) DESC"
-            )
-        ]
+    return _store().workspaces()
 
 
 def delete_snapshot(snapshot_id):
-    with closing(_connect()) as con, con:
-        return con.execute("DELETE FROM snapshots WHERE id=?", (snapshot_id,)).rowcount
+    return _store().delete_snapshot(snapshot_id)
 
 
 def clear(workspace, demo_only=False):
-    with closing(_connect()) as con, con:
-        sql = "DELETE FROM snapshots WHERE workspace=?" + (
-            " AND demo=1" if demo_only else ""
-        )
-        return con.execute(sql, (str(workspace),)).rowcount
+    return _store().clear_snapshots(str(workspace), demo_only)
 
 
 def trends(workspace):

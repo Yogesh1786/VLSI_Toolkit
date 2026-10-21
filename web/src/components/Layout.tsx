@@ -20,6 +20,7 @@ import {
   type Health,
 } from "../lib/api";
 import { Alert, CopyButton } from "./ui";
+import { FeedbackButton } from "./FeedbackButton";
 import { cx } from "../lib/format";
 
 const isMac =
@@ -389,6 +390,7 @@ export function Layout({ children }: { children: ReactNode }) {
             {isMac ? "⌘ K" : "Ctrl K"}
           </kbd>
         </button>
+        <FeedbackButton />
         <ThemeToggle />
       </header>
 

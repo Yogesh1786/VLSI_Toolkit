@@ -52,7 +52,7 @@ type Analysis = {
   health_score: number | null;
   files_analyzed: number;
   seconds: number;
-  snapshot_id?: number;
+  snapshot_id?: string;
 };
 
 const STATUS = {

@@ -9,7 +9,7 @@ import {
   SlidersHorizontal,
   Unplug,
 } from "lucide-react";
-import { useAnalysis, type SourceFile } from "../lib/api";
+import { useAnalysis, type SourceFile, initialExample } from "../lib/api";
 import { FileSource } from "../components/FileSource";
 import { DataTable } from "../components/DataTable";
 import { CodeBlock } from "../components/CodeBlock";
@@ -69,7 +69,7 @@ const EXAMPLES = {
 } as const;
 
 export default function NetlistCheck() {
-  const [example, setExample] = useState<keyof typeof EXAMPLES>("buggy");
+  const [example, setExample] = useState<keyof typeof EXAMPLES>(() => initialExample("buggy", EXAMPLES));
   const [files, setFiles] = useState<SourceFile[] | null>(null);
   const [tab, setTab] = useState("checks");
   const file = files?.[0] ?? null;

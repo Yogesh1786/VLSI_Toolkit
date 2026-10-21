@@ -21,6 +21,8 @@ import {
   Cpu as Chip,
   Zap,
   FileCheck2,
+  Gauge,
+  Library,
   type LucideIcon,
 } from "lucide-react";
 
@@ -82,6 +84,13 @@ export const TOOLS: Tool[] = [
     area: "Workspace",
     icon: ChartSpline,
     description: "Health metrics of saved runs over time",
+  },
+  {
+    path: "/examples",
+    title: "Examples Library",
+    area: "Workspace",
+    icon: Library,
+    description: "Every example file: preview, download, open in a tool",
   },
   {
     path: "/modules",
@@ -216,6 +225,15 @@ export const TOOLS: Tool[] = [
     icon: GitCompareArrows,
     description: "New failures & fixes, timing before/after ECO",
   },
+  {
+    path: "/activity",
+    title: "Activity",
+    area: "Tracking",
+    icon: Gauge,
+    description: "Tool usage, failures and visitor feedback",
+  },
 ];
+
+export const REPO_URL = "https://github.com/Yogesh1786/VLSI_Toolkit";
 
 export const toolByPath = (path: string) => TOOLS.find((t) => t.path === path);

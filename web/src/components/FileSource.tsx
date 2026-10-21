@@ -1,17 +1,12 @@
 // File chooser: bundled example, files from the project workspace, or upload (drag & drop).
 // Reports the chosen files to the parent page. A link like /lint?ws=rtl/top.sv opens the
-// page with that workspace file already selected.
+// page with that workspace file already selected; /sdc?ex=signoff/uart_top_fixed.sdc opens it
+// with that bundled example (used by the Examples Library).
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import {
-  Check,
-  FileText,
-  FolderGit2,
-  FolderOpen,
-  Upload,
-  X,
-} from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { ArrowRight, Check, Download, Eye, FileText, FolderGit2, FolderOpen, Library, Upload, X } from "lucide-react";
 import { loadExample, type SourceFile } from "../lib/api";
+import { ExamplePreview, exampleDownloadUrl } from "./ExamplePreview";
 import {
   fmtAgo,
   fmtSize,
@@ -41,6 +36,14 @@ export function FileSource({
 }) {
   const { ws } = useWorkspace();
   const [params] = useSearchParams();
+  // ?ex=path from the Examples Library: used when the file type fits this chooser
+  const [override, setOverride] = useState<string[] | null>(() => {
+    const ex = (params.get("ex") ?? "").split(",").filter(Boolean);
+    if (!ex.length) return null;
+    const exts = (accept ? accept.split(",") : examples.map((e) => e.slice(e.lastIndexOf(".")))).map((x) => x.trim().toLowerCase());
+    return ex.every((e) => exts.some((x) => e.toLowerCase().endsWith(x))) ? ex : null;
+  });
+  const [preview, setPreview] = useState<string | null>(null);
   const candidates = useMemo(
     () => (ws && !ws.is_default ? matchingFiles(ws, accept, wsKinds) : []),
     [ws, accept, wsKinds],
@@ -57,7 +60,14 @@ export function FileSource({
   const [drag, setDrag] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const input = useRef<HTMLInputElement>(null);
-  const examplesKey = examples.join("|");
+  const shownExamples = override ?? examples;
+  const examplesKey = shownExamples.join("|");
+  // the page switched to another built-in example (its own picker): drop the ?ex= choice
+  const pageExamplesKey = examples.join("|");
+  const firstPageKey = useRef(pageExamplesKey);
+  useEffect(() => {
+    if (pageExamplesKey !== firstPageKey.current) setOverride(null);
+  }, [pageExamplesKey]);
 
   // a ?ws= link selects workspace files automatically
   useEffect(() => {
@@ -86,7 +96,7 @@ export function FileSource({
     };
     if (mode === "example")
       deliver(
-        Promise.all(examples.map(loadExample)).then((fs) =>
+        Promise.all(shownExamples.map(loadExample)).then((fs) =>
           fs.map(({ name, text }) => ({ name, text })),
         ),
       );
@@ -156,30 +166,47 @@ export function FileSource({
 
       {mode === "example" && (
         <div className="flex flex-wrap items-center gap-2">
-          {(showAll || examples.length <= 4
-            ? examples
-            : examples.slice(0, 3)
-          ).map((e) => (
+          {(showAll || shownExamples.length <= 4 ? shownExamples : shownExamples.slice(0, 3)).map((e) => (
             <span
               key={e}
-              className="inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2.5 py-1 font-mono text-[12px] text-muted"
+              className="group inline-flex items-center overflow-hidden rounded-md border border-line bg-surface-2 font-mono text-[12px] text-muted hover:border-brand/40"
             >
-              <FileText className="size-3.5" />
-              examples/{e}
+              <button
+                onClick={() => setPreview(e)}
+                title="Preview this example"
+                className="inline-flex items-center gap-1.5 py-1 pr-2 pl-2.5 hover:text-fg"
+              >
+                <FileText className="size-3.5 text-brand" />
+                examples/{e}
+                <Eye className="size-3.5 opacity-0 transition group-hover:opacity-70" />
+              </button>
+              <a
+                href={exampleDownloadUrl(e)}
+                download
+                title="Download this example"
+                aria-label={`Download ${e}`}
+                className="border-l border-line px-2 py-1 hover:bg-surface-3 hover:text-fg"
+              >
+                <Download className="size-3.5" />
+              </a>
             </span>
           ))}
-          {examples.length > 4 && (
-            <button
-              onClick={() => setShowAll((s) => !s)}
-              className="text-[12.5px] font-medium text-brand hover:underline"
-            >
-              {showAll
-                ? "Show less"
-                : `+ ${examples.length - 3} more (${examples.length} files)`}
+          {shownExamples.length > 4 && (
+            <button onClick={() => setShowAll((v) => !v)} className="text-[12.5px] font-medium text-brand hover:underline">
+              {showAll ? "Show less" : `+ ${shownExamples.length - 3} more (${shownExamples.length} files)`}
             </button>
           )}
+          {override && (
+            <button onClick={() => setOverride(null)} className="text-[12.5px] font-medium text-muted hover:text-fg">
+              Reset to default example
+            </button>
+          )}
+          <Link to="/examples" className="ml-auto inline-flex items-center gap-1.5 text-[12.5px] font-medium text-brand hover:underline">
+            <Library className="size-3.5" /> Browse all examples <ArrowRight className="size-3.5" />
+          </Link>
         </div>
       )}
+      {preview && <ExamplePreview path={preview} onClose={() => setPreview(null)} />}
 
       {mode === "workspace" && ws && (
         <div>

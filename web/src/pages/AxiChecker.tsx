@@ -10,7 +10,7 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
-import { useAnalysis, type SourceFile } from "../lib/api";
+import { useAnalysis, type SourceFile, initialExample } from "../lib/api";
 import { FileSource } from "../components/FileSource";
 import { DataTable } from "../components/DataTable";
 import { AxiTimeline } from "../components/charts";
@@ -114,7 +114,7 @@ const STATUS_TONE: Record<string, "good" | "bad" | "warn"> = {
 };
 
 export default function AxiChecker() {
-  const [example, setExample] = useState<keyof typeof EXAMPLES>("buggy");
+  const [example, setExample] = useState<keyof typeof EXAMPLES>(() => initialExample("buggy", EXAMPLES));
   const [files, setFiles] = useState<SourceFile[] | null>(null);
   const [timeout, setTimeoutCycles] = useState(16);
   const [itfName, setItfName] = useState("");

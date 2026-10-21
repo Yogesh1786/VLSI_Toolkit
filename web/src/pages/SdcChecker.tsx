@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { BookOpen, Bug, Clock, Code, FileCheck2 } from "lucide-react";
-import { useAnalysis, type SourceFile } from "../lib/api";
+import { useAnalysis, type SourceFile, initialExample } from "../lib/api";
 import { FileSource } from "../components/FileSource";
 import { DataTable } from "../components/DataTable";
 import { CodeBlock } from "../components/CodeBlock";
@@ -59,7 +59,9 @@ export default function SdcChecker() {
   const [sdc, setSdc] = useState<SourceFile[] | null>(null);
   const [rtl, setRtl] = useState<SourceFile[] | null>(null);
   const [useRtl, setUseRtl] = useState(true);
-  const [example, setExample] = useState("signoff/uart_top.sdc");
+  const [example, setExample] = useState<string>(() =>
+    initialExample("signoff/uart_top.sdc", { "signoff/uart_top.sdc": "signoff/uart_top.sdc", "signoff/uart_top_fixed.sdc": "signoff/uart_top_fixed.sdc" }),
+  );
   const [tab, setTab] = useState("issues");
   const [sev, setSev] = useState<Severity[]>(["ERROR", "WARNING", "INFO"]);
   const file = sdc?.[0] ?? null;

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 export type SourceFile = { name: string; text: string };
 
 /** API version this web app was built for (see API_VERSION in api/routers/general.py). */
-export const REQUIRED_API_VERSION = 5;
+export const REQUIRED_API_VERSION = 7;
 export const API_START_COMMAND =
   "python -m uvicorn api.main:app --port 8000 --reload";
 
@@ -124,6 +124,7 @@ export type Health = {
   ngspice: boolean;
   hosted?: boolean;
   api_version?: number;
+  database?: { kind: string; connected: boolean };
   endpoints?: string[];
 };
 
@@ -148,4 +149,15 @@ export function useHealth(intervalMs = 15000) {
   const outdated =
     health != null && (health.api_version ?? 1) < REQUIRED_API_VERSION;
   return { health, checked, offline: checked && health == null, outdated };
+}
+
+/**
+ * First value of a page's own example picker. A link from the Examples Library
+ * (?ex=path) selects the matching option, so the picker and the loaded file agree.
+ * `options` maps each choice to its example path.
+ */
+export function initialExample<K extends string>(fallback: NoInfer<K>, options: Record<K, string>): K {
+  const ex = new URLSearchParams(window.location.search).get("ex");
+  const hit = (Object.keys(options) as K[]).find((k) => options[k] === ex);
+  return hit ?? fallback;
 }

@@ -13,6 +13,7 @@ Two settings connect the two halves:
 | -------------- | ------ | ------------------ | ---------------------------------------------------- |
 | `VITE_API_URL` | Vercel | the Render address | tells the React app where the API is                 |
 | `CORS_ORIGINS` | Render | the Vercel address | lets the browser accept answers from another address |
+| `MONGODB_URI`  | Render | the Atlas connection string | stores Trends history, the activity log and feedback permanently (optional) |
 
 Files used: `render.yaml` + `requirements.txt` + `.python-version` (Render), `web/vercel.json` (Vercel).
 
@@ -82,6 +83,33 @@ Optional, for Vercel _preview_ deployments (each branch or pull request gets its
 > `VITE_API_URL` is baked in when the React app is **built**. If you change it on Vercel, redeploy
 > (Deployments → ⋯ → Redeploy) for it to take effect.
 
+## Step 5: database (MongoDB Atlas, optional but recommended)
+
+Without a database, saved Trends runs, the activity log and feedback live in a temporary SQLite file
+on Render and are **lost on every deploy or restart**. With `MONGODB_URI` they are kept in MongoDB.
+
+1. https://www.mongodb.com/cloud/atlas → create a free **M0** cluster (region: Mumbai or Singapore).
+2. **Database Access → Add New Database User** → username + **Autogenerate Secure Password** (copy it).
+3. **Network Access → Add IP Address → `0.0.0.0/0`** (Render's free plan has no fixed IP; the password protects the database).
+4. **Database → Connect → Drivers → Python** → copy the string and put your password in place of `<password>`.
+5. Render → `vlsi-toolkit-api` → **Environment** → add `MONGODB_URI` = that string → **Save, rebuild and deploy**.
+6. Check: `<render address>/api/health` shows `"database": {"kind": "mongodb", "connected": true}`.
+
+**Local app:** copy `.env.example` to **`.env`** in the project folder and put the same string in it.
+`.env` is in `.gitignore`, so the password never reaches GitHub. The local Activity page then shows the
+details (file names, errors, feedback text) of the live site too, because both read the same database.
+
+What is stored (database `vlsi_toolkit`):
+
+| Collection  | One document per…        | Contents                                                                     |
+| ----------- | ------------------------ | ---------------------------------------------------------------------------- |
+| `snapshots` | saved workspace analysis | health score and metrics, label, date                                        |
+| `events`    | tool run                 | tool, time, duration, **file names and sizes**, result counts, error message |
+| `feedback`  | Feedback-button message  | message, rating, optional name and e-mail, page                              |
+
+Uploaded file **contents are never stored**. On the live site visitors see totals only; set
+`VT_SHOW_DETAILS=1` on Render if you want the full Activity page online too.
+
 ---
 
 ## What is different online
@@ -90,7 +118,7 @@ Optional, for Vercel _preview_ deployments (each branch or pull request gets its
 | --------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------ |
 | Tools with Example / Upload | ✔                          | ✔                                                                                                |
 | Project Workspace           | Open any folder            | Bundled `examples/` only. Opening folders is blocked, so visitors can't read files on the server |
-| Trends / saved runs         | Kept in `~/.vlsi_toolkit/` | Temporary: shared by all visitors, **lost on every deploy or restart**                           |
+| Trends / activity / feedback | `~/.vlsi_toolkit/` (or MongoDB via `.env`) | MongoDB when `MONGODB_URI` is set; otherwise temporary and **lost on every deploy or restart** |
 | ngspice sweep `--run`       | If ngspice is installed    | Not available                                                                                    |
 
 Hosted mode switches on automatically on Render (`RENDER` variable) and Vercel. On other hosts set `VT_HOSTED=1`.
@@ -107,6 +135,7 @@ retries every 15 s by itself). Free instances have 0.1 CPU and 512 MB RAM, enoug
 | Symptom                                               | Fix                                                                                                                     |
 | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Browser console: _blocked by CORS policy_             | `CORS_ORIGINS` on Render must be exactly the Vercel address (`https://…vercel.app`, no `/` at the end). Save → redeploy |
+| Activity page says _MongoDB not used_ / _not reachable_ | `<password>` was not replaced in `MONGODB_URI`, the password is wrong, or Atlas **Network Access** lacks `0.0.0.0/0` |
 | Every tool says _Cannot reach the API server at …_    | Render is waking up (wait 1 min), or `VITE_API_URL` is wrong. Open `<render address>/api/health` directly               |
 | Tools call `vercel.app/api/...` and get 404           | `VITE_API_URL` was not set when the site was built: set it and **Redeploy**                                             |
 | Refreshing a page such as `/lint` gives 404 on Vercel | Root Directory must be `web` so `web/vercel.json` (page fallback) is used                                               |

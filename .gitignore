@@ -19,4 +19,5 @@ web/tsconfig.tsbuildinfo
 .vercel/
 .env
 .env.*
+!.env.example
 .claude/

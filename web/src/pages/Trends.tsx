@@ -33,9 +33,9 @@ import {
 } from "../components/ui";
 import { cx, TONE_HEX } from "../lib/format";
 
-type Point = { ts: number; value: number; id: number };
+type Point = { ts: number; value: number; id: string };
 type Snapshot = {
-  id: number;
+  id: string;
   ts: number;
   workspace: string;
   label: string;

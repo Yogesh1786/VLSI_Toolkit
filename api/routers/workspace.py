@@ -141,7 +141,7 @@ def get_history(workspace: str | None = None):
 
 
 @router.delete("/history/{snapshot_id}")
-def delete_history(snapshot_id: int):
+def delete_history(snapshot_id: str):
     if not history.delete_snapshot(snapshot_id):
         raise HTTPException(404, f"snapshot {snapshot_id} not found")
     return {"deleted": snapshot_id}

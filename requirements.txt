@@ -2,5 +2,6 @@
 # Web app (the React frontend talks to this API server):
 fastapi>=0.141        # python -m uvicorn api.main:app --port 8000
 uvicorn>=0.29
+pymongo>=4.6          # MongoDB storage (used only when MONGODB_URI is set)
 
 # Optional extras (matplotlib, pyyaml, cocotb): pip install -r requirements-extras.txt

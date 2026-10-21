@@ -13,3 +13,5 @@ services:
     envVars:
       - key: CORS_ORIGINS # your Vercel address, e.g. https://vlsi-toolkit.vercel.app
         sync: false
+      - key: MONGODB_URI # MongoDB Atlas connection string (optional): permanent Trends, activity log, feedback
+        sync: false
