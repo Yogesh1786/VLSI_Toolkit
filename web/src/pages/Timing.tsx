@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ChartColumn, Download, Flag, Route, Timer } from "lucide-react";
 import { useAnalysis, type SourceFile } from "../lib/api";
 import { FileSource } from "../components/FileSource";
+import { ReportButton, type Report, type ReportKpi } from "../components/ReportButton";
 import { DataTable } from "../components/DataTable";
 import { SlackHistogram } from "../components/charts";
 import {
@@ -107,6 +108,24 @@ export default function Timing() {
     tone: failing ? "bad" : "good",
   });
 
+  const report: Report | null = data && file ? {
+    tool: "Timing (STA)",
+    title: file.name,
+    files: [file.name],
+    verdict: failing ? { tone: "bad", text: `${failing} violating path(s)` } : { tone: "good", text: "All paths meet timing" },
+    kpis: order.flatMap((c) => [
+      { label: `${c} WNS`, value: `${f3(summary[c].wns)} ns`, tone: summary[c].violations ? "bad" : "good" },
+      { label: `${c} TNS`, value: `${f3(summary[c].tns)} ns` },
+    ] as ReportKpi[]).concat([{ label: "Paths", value: paths.length }]),
+    sections: [
+      { title: "Summary by check", kind: "table", columns: [{ key: "check", label: "Check" }, { key: "paths", label: "Paths", align: "right" }, { key: "violations", label: "Violations", align: "right" }, { key: "wns", label: "WNS (ns)", align: "right" }, { key: "tns", label: "TNS (ns)", align: "right" }],
+        rows: order.map((c) => ({ check: c, ...summary[c] })) },
+      { title: "Worst paths", kind: "table", limit: 50, columns: [{ key: "check", label: "Check" }, { key: "slack", label: "Slack (ns)", align: "right" }, { key: "startpoint", label: "Startpoint" }, { key: "endpoint", label: "Endpoint" }, { key: "path_group", label: "Group" }],
+        rows: [...paths].sort((a, b) => (a.slack ?? 0) - (b.slack ?? 0)) },
+      { title: "Endpoints with most violations", kind: "table", limit: 30, columns: [{ key: "endpoint", label: "Endpoint" }, { key: "violations", label: "Violating paths", align: "right" }, { key: "worst", label: "Worst slack (ns)", align: "right" }], rows: endpoints },
+    ],
+  } : null;
+
   return (
     <>
       <PageHeader
@@ -114,7 +133,9 @@ export default function Timing() {
         title="Timing (STA)"
         icon={Timer}
         description="Analyze a static timing report from OpenSTA, PrimeTime or Vivado: WNS/TNS per check, the slack distribution and the worst paths."
-        actions={
+        actions={<>
+          <ReportButton report={report} />
+          {
           data ? (
             <Button
               icon={Download}
@@ -126,6 +147,7 @@ export default function Timing() {
             </Button>
           ) : undefined
         }
+        </>}
       />
       <Card className="mb-6">
         <FileSource

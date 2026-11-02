@@ -16,6 +16,7 @@ web/dist/
 web/tsconfig.tsbuildinfo
 
 # Local tools and secrets
+.yowasp-cache/
 .vercel/
 .env
 .env.*

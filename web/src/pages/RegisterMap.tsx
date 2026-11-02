@@ -9,6 +9,7 @@ import {
   Table2,
   Terminal,
   Cpu,
+  Workflow,
 } from "lucide-react";
 import { useAnalysis, type SourceFile } from "../lib/api";
 import { FileSource } from "../components/FileSource";
@@ -155,6 +156,7 @@ export default function RegisterMap() {
               { id: "h", label: "C header", icon: Terminal },
               { id: "axil", label: "AXI-Lite slave", icon: ArrowLeftRight },
               { id: "tb", label: "AXI-Lite testbench", icon: FlaskConical },
+              { id: "ral", label: "UVM RAL", icon: Workflow },
               { id: "spec", label: "Spec editor", icon: Pencil },
             ]}
           />
@@ -306,7 +308,19 @@ export default function RegisterMap() {
               />
             </div>
           )}
-        </>
+                  {ok && tab === "ral" && (
+            <div className="space-y-4">
+              <Alert tone="info" title="UVM register model">
+                One <code className="font-mono">uvm_reg</code> class per register (access policy, reset value and volatility per
+                field), a <code className="font-mono">uvm_reg_block</code> with the address map, and a bus adapter. Connect the adapter
+                to your AXI-Lite or APB agent with <code className="font-mono">default_map.set_sequencer(sqr, adapter)</code>.
+              </Alert>
+              {[`${data.block}_reg_model.sv`, `${data.block}_reg_adapter.sv`, `${data.block}_ral_pkg.sv`].map((n) =>
+                data.outputs[n] ? <CodeBlock key={n} code={data.outputs[n]} lang="verilog" filename={n} /> : null,
+              )}
+            </div>
+          )}
+</>
       )}
     </>
   );

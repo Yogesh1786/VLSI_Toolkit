@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 export type SourceFile = { name: string; text: string };
 
 /** API version this web app was built for (see API_VERSION in api/routers/general.py). */
-export const REQUIRED_API_VERSION = 7;
+export const REQUIRED_API_VERSION = 8;
 export const API_START_COMMAND =
   "python -m uvicorn api.main:app --port 8000 --reload";
 

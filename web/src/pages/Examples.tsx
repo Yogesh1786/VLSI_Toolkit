@@ -10,7 +10,7 @@ import { cx, type Tone } from "../lib/format";
 
 type ExampleFile = {
   path: string; name: string; folder: string; kind: string; kind_label: string; area: string; size: number;
-  title: string; description: string; highlight: string; tools: string[];
+  title: string; description: string; highlight: string; tools: string[]; binary?: boolean;
 };
 type Collection = { folder: string; title: string; description: string; tool: string; files: number };
 type Catalog = { files: ExampleFile[]; collections: Collection[]; count: number; bytes: number };
@@ -63,14 +63,16 @@ function ExampleCard({ f, onPreview, featured }: { f: ExampleFile; onPreview: ()
             <ArrowRight className="size-3.5 shrink-0" />
           </Link>
         )}
-        <button
-          onClick={onPreview}
-          title="Preview"
-          aria-label={`Preview ${f.name}`}
-          className="rounded-lg border border-line p-2 text-muted transition hover:bg-surface-3 hover:text-fg"
-        >
-          <Eye className="size-4" />
-        </button>
+        {!f.binary && (
+          <button
+            onClick={onPreview}
+            title="Preview"
+            aria-label={`Preview ${f.name}`}
+            className="rounded-lg border border-line p-2 text-muted transition hover:bg-surface-3 hover:text-fg"
+          >
+            <Eye className="size-4" />
+          </button>
+        )}
         <a
           href={exampleDownloadUrl(f.path)}
           download

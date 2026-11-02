@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Download, Layers, Network, Zap } from "lucide-react";
 import { useAnalysis, type SourceFile } from "../lib/api";
 import { FileSource } from "../components/FileSource";
+import { ReportButton, type Report as PageReport } from "../components/ReportButton";
 import { DataTable } from "../components/DataTable";
 import {
   Alert,
@@ -123,6 +124,20 @@ export default function PowerReport() {
       ]
     : [];
 
+  const report: PageReport | null = r && t && file ? {
+    tool: "Power Report",
+    title: r.design ? `Design ${r.design}` : file.name,
+    files: [file.name],
+    kpis: [
+      { label: "Total", value: power(t.total) }, { label: "Dynamic", value: power(t.dynamic) },
+      { label: "Internal", value: power(t.internal) }, { label: "Switching", value: power(t.switching) }, { label: "Leakage", value: power(t.leakage) },
+    ],
+    sections: [
+      { title: "Power by instance", kind: "table", columns: [{ key: "name", label: "Instance" }, { key: "design", label: "Design" }, { key: "switching", label: "Switching (mW)", align: "right" }, { key: "internal", label: "Internal (mW)", align: "right" }, { key: "leakage", label: "Leakage (mW)", align: "right" }, { key: "total", label: "Total (mW)", align: "right" }, { key: "percent", label: "%", align: "right" }], rows: r.hierarchy },
+      { title: "Power groups", kind: "table", columns: [{ key: "group", label: "Group" }, { key: "internal", label: "Internal (mW)", align: "right" }, { key: "switching", label: "Switching (mW)", align: "right" }, { key: "leakage", label: "Leakage (mW)", align: "right" }, { key: "total", label: "Total (mW)", align: "right" }], rows: groups },
+    ],
+  } : null;
+
   return (
     <>
       <PageHeader
@@ -130,7 +145,9 @@ export default function PowerReport() {
         title="Power Report"
         icon={Zap}
         description="Read report_power output from PrimePower, PrimeTime-PX, Design Compiler or Innovus: dynamic vs leakage, power groups and the power of each instance."
-        actions={
+        actions={<>
+          <ReportButton report={report} />
+          {
           r?.hierarchy.length ? (
             <Button
               icon={Download}
@@ -146,6 +163,7 @@ export default function PowerReport() {
             </Button>
           ) : undefined
         }
+        </>}
       />
       <Card className="mb-6">
         <FileSource

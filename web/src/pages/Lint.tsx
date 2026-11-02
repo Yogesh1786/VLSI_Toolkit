@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BookOpen, Bug, Code, ListChecks } from "lucide-react";
 import { useAnalysis, type SourceFile } from "../lib/api";
 import { FileSource } from "../components/FileSource";
+import { ReportButton, type Report } from "../components/ReportButton";
 import { DataTable } from "../components/DataTable";
 import { CodeBlock } from "../components/CodeBlock";
 import {
@@ -15,6 +16,7 @@ import {
   Select,
   StatusBadge,
   Tabs,
+  Toggle,
 } from "../components/ui";
 import { downloadText, toCSV } from "../lib/format";
 
@@ -24,6 +26,7 @@ type Issue = {
   severity: "ERROR" | "WARNING" | "INFO";
   rule: string;
   message: string;
+  source?: "lint" | "compiler";
 };
 
 const RULE_HELP: Record<string, string> = {
@@ -50,6 +53,8 @@ const RULE_HELP: Record<string, string> = {
     "A clock-domain crossing through one flip-flop is not enough. Use two flops in a row (a 2-flop synchronizer).",
   CDC_MULTIBIT:
     "Each bit of a bus can be synchronized on a different cycle, giving a corrupt value. Use Gray code, a req/ack handshake or an async FIFO.",
+  RDC_UNSYNC:
+    "A flop reset by one asynchronous reset feeds a flop that is not reset by it. When only the first reset is asserted, the second can capture a changing value (metastability).",
 };
 
 export default function Lint() {
@@ -61,10 +66,14 @@ export default function Lint() {
     "INFO",
   ]);
   const [srcFile, setSrcFile] = useState("");
+  const [compiler, setCompiler] = useState(true);
   const { data, loading, error } = useAnalysis<{
     issues: Issue[];
     rules: Record<string, string>;
-  }>("/api/rtl/lint", files ? { files } : null);
+    rule_help?: Record<string, string>;
+    compiler?: { available: boolean; ran: boolean; top_modules: string[] };
+  }>("/api/rtl/lint", files ? { files, compiler } : null);
+  const ruleHelp = { ...RULE_HELP, ...(data?.rule_help ?? {}) };
 
   const issues = data?.issues ?? [];
   const count = (s: string) => issues.filter((i) => i.severity === s).length;
@@ -76,9 +85,25 @@ export default function Lint() {
     files?.find((f) => issues.some((i) => i.file === f.name)) ??
     files?.[0];
 
+  const report: Report | null = data && files ? {
+    tool: "RTL Lint",
+    title: files.length === 1 ? files[0].name : `${files.length} RTL files`,
+    files: files.map((f) => f.name),
+    verdict: count("ERROR") ? { tone: "bad", text: `${count("ERROR")} error(s) must be fixed` } : count("WARNING") ? { tone: "warn", text: `No errors, ${count("WARNING")} warning(s) to review` } : { tone: "good", text: "Clean: no errors or warnings" },
+    kpis: [
+      { label: "Errors", value: count("ERROR"), tone: count("ERROR") ? "bad" : "good" },
+      { label: "Warnings", value: count("WARNING"), tone: count("WARNING") ? "warn" : "good" },
+      { label: "Info", value: count("INFO") },
+      { label: "Files", value: files.length },
+    ],
+    sections: [{ title: "Findings", kind: "table", columns: [
+      { key: "severity", label: "Severity" }, { key: "rule", label: "Rule" }, { key: "file", label: "File" },
+      { key: "line", label: "Line", align: "right" }, { key: "message", label: "Message" }], rows: issues }],
+  } : null;
+
   return (
     <>
-      <PageHeader
+      <PageHeader actions={<ReportButton report={report} />}
         area="RTL design"
         title="RTL Lint"
         icon={ListChecks}
@@ -88,7 +113,11 @@ export default function Lint() {
             <code className="font-mono text-[13px]">lint_demo.v</code> has four
             planted bugs and{" "}
             <code className="font-mono text-[13px]">cdc_demo.v</code> three
-            clock-domain-crossing bugs; the other files are clean.
+            clock-domain-crossing bugs and{" "}
+            <code className="font-mono text-[13px]">rdc_demo.v</code> a
+            reset-domain crossing. With compiler checks on, every file is also
+            compiled by slang, a full SystemVerilog front end: syntax and type
+            errors, width truncation, undriven and unused signals.
           </>
         }
       />
@@ -99,6 +128,7 @@ export default function Lint() {
           examples={[
             "lint_demo.v",
             "cdc_demo.v",
+            "rdc_demo.v",
             "counter.v",
             "fifo.v",
             "alu.v",
@@ -106,6 +136,13 @@ export default function Lint() {
           accept=".v,.sv,.vh,.svh"
           onChange={setFiles}
         />
+        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-4 text-[13px] text-muted">
+          <Toggle checked={compiler} onChange={setCompiler} label="Compiler checks (slang)" />
+          {data?.compiler && !data.compiler.available && <span className="text-warn">slang is not installed on this server (pip install pyslang)</span>}
+          {data?.compiler?.ran && data.compiler.top_modules.length > 0 && (
+            <span>Elaborated top module{data.compiler.top_modules.length > 1 ? "s" : ""}: <b className="font-mono text-fg">{data.compiler.top_modules.join(", ")}</b></span>
+          )}
+        </div>
       </Card>
 
       {error && (
@@ -227,7 +264,8 @@ export default function Lint() {
                         value: (i) =>
                           ({ ERROR: 0, WARNING: 1, INFO: 2 })[i.severity],
                       },
-                      { key: "rule", header: "Rule", mono: true },
+                      { key: "rule", header: "Rule", mono: true, render: (i: Issue) => (
+                      <span>{i.rule}{i.source === "compiler" && <span className="ml-1.5 rounded bg-brand-soft px-1.5 font-sans text-[10.5px] font-semibold text-brand">slang</span>}</span>) },
                       {
                         key: "file",
                         header: "File",
@@ -294,7 +332,7 @@ export default function Lint() {
             {tab === "rules" && (
               <Card bodyClass="p-4">
                 <DataTable
-                  rows={Object.entries(RULE_HELP).map(([rule, why]) => ({
+                  rows={Object.entries(ruleHelp).map(([rule, why]) => ({
                     rule,
                     why,
                     severity: data.rules[rule] ?? "INFO",

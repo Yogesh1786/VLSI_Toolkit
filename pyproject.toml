@@ -3,7 +3,11 @@ name = "vlsi-toolkit"
 version = "0.5.0"
 description = "Python helpers for chip design (VLSI) flows, with a React web app"
 requires-python = ">=3.10"
+# The core toolkit needs only the standard library; these are for the API server.
 dependencies = [
     "fastapi>=0.141",
-    "pymongo>=4.6",            # MongoDB storage, used only when MONGODB_URI is set          # API server; the core toolkit itself needs only the standard library
+    "pymongo>=4.6",            # MongoDB storage, used only when MONGODB_URI is set
+    "yowasp-yosys>=0.50",      # Yosys (WebAssembly) for the RTL Synthesis page
+    "pyslang>=8.0",            # slang SystemVerilog compiler for RTL Lint
+    "gdstk>=0.9",              # GDS Viewer
 ]

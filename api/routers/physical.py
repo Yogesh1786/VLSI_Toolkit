@@ -1,11 +1,16 @@
 """Physical design: timing reports, DEF/LEF floorplans, Liberty libraries, sign-off reports (synthesis, power, SDC)."""
 
+import base64
+import binascii
 import hashlib
 from collections import OrderedDict
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 
 from vlsi_toolkit import (
+    examples_catalog,
+    gds_view,
     liberty,
     pd_analyzer,
     power_report,
@@ -142,3 +147,32 @@ def sdc(req: SdcRequest):
         if not ports:
             raise HTTPException(400, "No Verilog module found in the RTL file(s)")
     return sdc_check.check(req.text, ports) | {"rtl_top": top, "rtl_ports": ports}
+
+
+class GdsRequest(BaseModel):
+    name: str = "layout.gds"
+    data: str = Field(..., description="the GDSII/OASIS file, base64-encoded")
+    cell: str | None = None
+
+
+@router.post("/gds")
+def gds(req: GdsRequest):
+    """Layers, hierarchy and a drawable outline of a GDSII/OASIS layout."""
+    try:
+        raw = base64.b64decode(req.data, validate=False)
+        return gds_view.analyze(raw, req.name, req.cell)
+    except (ValueError, binascii.Error) as exc:
+        raise HTTPException(400, f"Could not decode the uploaded file: {exc}")
+    except gds_view.GdsError as exc:
+        raise HTTPException(400, str(exc))
+
+
+@router.get("/gds/example")
+def gds_example(path: str = "gds/demo_core.gds", cell: str | None = None):
+    try:
+        target = examples_catalog.resolve(path)
+        return gds_view.analyze(target.read_bytes(), target.name, cell)
+    except FileNotFoundError:
+        raise HTTPException(404, f"example '{path}' not found")
+    except gds_view.GdsError as exc:
+        raise HTTPException(400, str(exc))

@@ -23,6 +23,7 @@ INFO = {
     "fifo.v": ("Synchronous FIFO", "Parameterized FIFO with $clog2 widths, full/empty flags and pointer logic.", "clean", "/modules"),
     "lint_demo.v": ("Lint demo (buggy)", "Contains a multi-driven net, a latch, blocking assignments in a flop and a case without default.", "4 planted bugs", "/lint"),
     "cdc_demo.v": ("CDC demo (buggy)", "Two clock domains with an unsynchronized signal, a single-flop crossing and a multi-bit bus crossing, plus one correct 2-flop synchronizer.", "3 CDC bugs", "/lint"),
+    "rdc_demo.v": ("RDC demo (buggy)", "One clock and two asynchronous resets: a flop in the soft-reset domain feeds a flop reset only by the global reset.", "1 RDC bug", "/lint"),
     "sample.vcd": ("Sample waveform", "A short simulation dump with clocks, a counter bus and a glitch.", "waveform", "/vcd"),
     "sta_report.rpt": ("STA report", "OpenSTA/PrimeTime-style report_checks output with setup and hold paths, some violating.", "WNS < 0", "/timing"),
     "sta_report_eco.rpt": ("STA report after ECO", "The same design after an ECO: some endpoints fixed, some degraded. Compare it with sta_report.rpt.", "before/after", "/compare"),
@@ -44,6 +45,13 @@ INFO = {
     "pd/demo.def": ("Placed DEF", "A placed design with a macro, 1 400 instances and 3 unplaced cells.", "60.8% util", "/floorplan"),
     "pd/demo.lef": ("Cell LEF", "LEF with the cell and macro sizes used by demo.def.", "", "/floorplan"),
     "lib/vt_demo.lib": ("Liberty library", "A small standard-cell library with NLDM delay and transition tables.", "16 cells", "/liberty"),
+    "protocols/apb_demo.vcd": ("APB transfers (buggy)", "APB reads and writes with wait states, a PSLVERR, PENABLE without SETUP, an address change during a wait state and a SETUP not followed by ACCESS.", "4 findings", "/protocols"),
+    "protocols/ahb_lite_demo.vcd": ("AHB-Lite bursts (buggy)", "INCR4 bursts with a skipped address, a SEQ without NONSEQ, a 1 KB boundary crossing, a change during a wait state and a one-cycle ERROR response.", "7 findings", "/protocols"),
+    "protocols/axi_stream_demo.vcd": ("AXI-Stream packets (buggy)", "Packets with back-pressure, TVALID dropped early, payload changed while waiting, null TKEEP mid-packet and a packet without TLAST.", "4 findings", "/protocols"),
+    "protocols/spi_demo.vcd": ("SPI mode 0 frames", "SPI frames sending 'Hi' with a reply, a read-ID command, a 12-bit frame and a stray SCLK pulse.", "2 findings", "/protocols"),
+    "protocols/i2c_demo.vcd": ("I2C transactions", "EEPROM write of 'AB', an address NACK, an SDA glitch with SCL high and a transaction without STOP.", "4 findings", "/protocols"),
+    "protocols/uart_demo.vcd": ("UART 115200 8N1", "The text 'Hello, VLSI!' on a UART TX line, then a byte with a framing error. The baud rate is detected automatically.", "1 framing error", "/protocols"),
+    "gds/demo_core.gds": ("GDS layout", "A small placed core: inverter and NAND2 standard cells in mirrored rows, metal-2 straps and a power ring (SkyWater 130 layer numbers).", "72 instances", "/gds"),
     "analog/buggy_bias.sp": ("Bias netlist (buggy)", "SPICE netlist with a floating node and a floating gate.", "3 issues", "/netlist"),
     "analog/inverter_chain.sp": ("Inverter chain", "Parameterized inverter chain with .meas statements, ready for a VDD sweep.", "sweep", "/sweep"),
     "analog/inverter_tran.csv": ("Inverter transient", "Transient waveform (in/out) for rise, fall and delay measurements.", "waveform", "/measure"),
@@ -58,7 +66,7 @@ AREA_OF_KIND = {
     "rtl": "RTL design", "regmap": "RTL design", "log": "Verification", "vcd": "Verification",
     "timing": "Physical design", "def": "Physical design", "lef": "Physical design", "liberty": "Physical design",
     "sdc": "Physical design", "synth": "Physical design", "power": "Physical design",
-    "spice": "Analog", "waveform": "Analog",
+    "spice": "Analog", "waveform": "Analog", "gds": "Physical design",
 }
 
 
@@ -85,6 +93,7 @@ def catalog():
             "path": path, "name": path.rsplit("/", 1)[-1], "folder": folder, "kind": f["kind"],
             "kind_label": scan["kinds"].get(f["kind"], f["kind"]), "area": AREA_OF_KIND.get(f["kind"], "Other"),
             "size": f["size"], "title": title, "description": desc, "highlight": highlight, "tools": tools,
+            "binary": f["kind"] == "gds",
         })
     files.sort(key=lambda x: (x["area"], x["folder"], x["path"]))
     collections = [{"folder": k, "title": v[0], "description": v[1], "tool": v[2],

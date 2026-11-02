@@ -1,12 +1,12 @@
-"""RTL design: module parsing, lint, register maps, hierarchy and FSMs."""
+"""RTL design: module parsing, lint, register maps, hierarchy and FSMs, logic synthesis (Yosys)."""
 
 import json
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
-from vlsi_toolkit import hierarchy, lint, regmap_gen, tb_generator, verilog_parser
+from vlsi_toolkit import hierarchy, lint, regmap_gen, sv_compile, tb_generator, uvm_gen, verilog_parser, yosys_synth
 
-from ..models import Files, SourceFile
+from ..models import Files, LintRequest, SourceFile, SynthRequest
 
 router = APIRouter(prefix="/api/rtl", tags=["RTL design"])
 
@@ -41,25 +41,25 @@ def parse(req: SourceFile):
 
 
 @router.post("/lint")
-def run_lint(req: Files):
+def run_lint(req: LintRequest):
     issues = []
     for f in req.files:
         issues += lint.lint_text(f.text, f.name)
+    found = [{"file": i.file, "line": i.line, "severity": i.severity, "rule": i.rule, "message": i.message, "source": "lint"}
+             for i in issues]
+    compiler = {"available": sv_compile.available(), "ran": False, "top_modules": []}
+    if req.compiler and sv_compile.available():
+        c = sv_compile.check([(f.name, f.text) for f in req.files])
+        compiler.update(ran=True, top_modules=c["top_modules"])
+        found += [{k: i[k] for k in ("file", "line", "severity", "rule", "message")} | {"source": "compiler"} for i in c["issues"]]
     order = {"ERROR": 0, "WARNING": 1, "INFO": 2}
-    issues.sort(key=lambda i: (order[i.severity], i.file, i.line))
+    found.sort(key=lambda i: (order[i["severity"]], i["file"], i["line"]))
     return {
         "files": [f.name for f in req.files],
-        "issues": [
-            {
-                "file": i.file,
-                "line": i.line,
-                "severity": i.severity,
-                "rule": i.rule,
-                "message": i.message,
-            }
-            for i in issues
-        ],
-        "rules": lint.SEVERITY,
+        "issues": found,
+        "rules": lint.SEVERITY | (sv_compile.SEVERITY if compiler["ran"] else {}),
+        "rule_help": sv_compile.RULE_HELP if compiler["ran"] else {},
+        "compiler": compiler,
     }
 
 
@@ -116,6 +116,7 @@ def regmap(req: SourceFile):
             f"{rm.block}_regs.html": regmap_gen.gen_html(rm),
             f"{rm.block}_axil.v": regmap_gen.gen_axi_lite(rm),
             f"tb_{rm.block}_axil.v": regmap_gen.gen_axi_lite_tb(rm),
+            **uvm_gen.uvm_ral(rm)["files"],
         },
     }
 
@@ -123,3 +124,12 @@ def regmap(req: SourceFile):
 @router.post("/hierarchy")
 def design_hierarchy(req: Files):
     return hierarchy.analyze_project([(f.name, f.text) for f in req.files])
+
+
+@router.post("/synth")
+def synthesize(req: SynthRequest):
+    """Real logic synthesis with Yosys: gate counts, flip-flops, NAND2 equivalents, logic depth, netlist."""
+    try:
+        return yosys_synth.synthesize([(f.name, f.text) for f in req.files], req.top or None, req.flatten)
+    except yosys_synth.SynthError as exc:
+        raise HTTPException(400, str(exc))

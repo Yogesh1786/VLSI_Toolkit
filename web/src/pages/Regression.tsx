@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { getJSON, useAnalysis, type SourceFile } from "../lib/api";
 import { FileSource } from "../components/FileSource";
+import { ReportButton, type Report } from "../components/ReportButton";
 import { DataTable } from "../components/DataTable";
 import { CodeBlock } from "../components/CodeBlock";
 import {
@@ -90,6 +91,22 @@ export default function Regression() {
         !/^\s*UVM_(ERROR|FATAL)\s*:/.test(l),
     );
 
+  const report: Report | null = data ? {
+    tool: "Regression Triage",
+    title: `${results.length} tests`,
+    files: files?.map((f) => f.name),
+    verdict: count("PASS") === results.length ? { tone: "good", text: "All tests passed" } : { tone: "bad", text: `${count("FAIL")} failed, ${count("INCOMPLETE")} incomplete: ${(rate * 100).toFixed(1)}% pass rate` },
+    kpis: [
+      { label: "Pass rate", value: `${(rate * 100).toFixed(1)}%`, tone: rate === 1 ? "good" : "bad" },
+      { label: "Passed", value: count("PASS") }, { label: "Failed", value: count("FAIL") }, { label: "Incomplete", value: count("INCOMPLETE") },
+      { label: "Unique failures", value: data.signatures.length },
+    ],
+    sections: [
+      { title: "Failure signatures", kind: "table", columns: [{ key: "count", label: "Tests", align: "right" }, { key: "status", label: "Status" }, { key: "signature", label: "Signature" }], rows: data.signatures },
+      { title: "All tests", kind: "table", columns: [{ key: "status", label: "Status" }, { key: "test", label: "Test" }, { key: "seed", label: "Seed" }, { key: "errors", label: "Errors", align: "right" }, { key: "short_error", label: "First error" }], rows: sorted },
+    ],
+  } : null;
+
   return (
     <>
       <PageHeader
@@ -103,16 +120,19 @@ export default function Regression() {
           </>
         }
         actions={
-          data ? (
-            <Button
-              icon={Download}
-              onClick={() =>
-                downloadText("regression.html", data.html_report, "text/html")
-              }
-            >
-              HTML report
-            </Button>
-          ) : undefined
+          <>
+            <ReportButton report={report} />
+            {data ? (
+              <Button
+                icon={Download}
+                onClick={() =>
+                  downloadText("regression.html", data.html_report, "text/html")
+                }
+              >
+                Detailed log report
+              </Button>
+            ) : undefined}
+          </>
         }
       />
       <Card className="mb-6">

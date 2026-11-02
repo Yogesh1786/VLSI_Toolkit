@@ -15,7 +15,7 @@ all from one web app or one command line.
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?logo=tailwindcss&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-105%20passing-2ea44f)
+![Tests](https://img.shields.io/badge/tests-150%2B%20passing-2ea44f)
 ![Core dependencies](https://img.shields.io/badge/core%20dependencies-none-brightgreen)
 
 [**Live demo**](https://vlsi-toolkit.vercel.app) ·
@@ -43,7 +43,7 @@ Liberty, SDC, power and area reports, SPICE netlists, simulation logs) and turns
 
 - **No licenses, no installs for the core.** The analysis engine is pure Python standard library.
 - **Two ways to use it.** A modern React web app, or a scriptable CLI for nightly jobs and CI.
-- **Built for the whole flow.** 21 tools across RTL design, verification, physical design and analog.
+- **Built for the whole flow.** 25+ tools across RTL design, verification, physical design and analog, plus everyday calculators.
 
 ---
 
@@ -62,8 +62,9 @@ Liberty, SDC, power and area reports, SPICE netlists, simulation logs) and turns
 
 - **Module Explorer**: ports, parameters and evaluated widths, plus an instantiation template
 - **Hierarchy & FSM**: instance tree, black boxes, unused modules, **auto-drawn state diagrams** with unreachable states
-- **RTL Lint**: multi-drivers, latches, blocking in flops, missing defaults, plus **CDC checks** (unsynchronized, single-flop and multi-bit crossings)
-- **Register Map**: one JSON/YAML spec → Verilog RTL, an **AXI4-Lite slave** with a self-checking testbench, C header and HTML docs
+- **RTL Lint**: multi-drivers, latches, blocking in flops, missing defaults, **CDC** and **reset-domain-crossing** checks, plus a full **SystemVerilog compiler check** (slang): syntax and type errors, width truncation, undriven and unused signals
+- **RTL Synthesis**: real **Yosys** synthesis on the server (WebAssembly, no install): cells, flip-flops, NAND2 equivalents, logic depth, inferred latches, black boxes and the gate-level netlist
+- **Register Map**: one JSON/YAML spec → Verilog RTL, an **AXI4-Lite slave** with a self-checking testbench, a **UVM register model (RAL)**, C header and HTML docs
 
 </td>
 <td width="50%" valign="top">
@@ -75,6 +76,8 @@ Liberty, SDC, power and area reports, SPICE netlists, simulation logs) and turns
 - **Waveform Viewer**: zoomable VCD viewer with clock, glitch and X/Z detection
 - **AXI Protocol Checker**: 13 AXI4 / AXI4-Lite rules, every transaction rebuilt with latency and bandwidth
 - **Assertion Generator**: **SystemVerilog assertions** and cover points for AXI handshakes, FSMs, one-hot signals and outputs
+- **UVM Testbench**: a complete **UVM environment** from a module: interface, sequence item, sequence, driver, monitor, agent, scoreboard, coverage, env, test and tb_top (zip download)
+- **Protocol Checker**: **APB, AHB-Lite, AXI-Stream, SPI, I²C and UART** found in a VCD by signal name, checked against the protocol rules and decoded into transfers (UART baud rate auto-detected)
 
 </td>
 </tr>
@@ -89,6 +92,7 @@ Liberty, SDC, power and area reports, SPICE netlists, simulation logs) and turns
 - **Synthesis Report**: Yosys `stat` / Design Compiler area: per-module area and cell usage
 - **Power Report**: dynamic vs leakage, power groups, per-instance power
 - **SDC Checker**: 13 rules for constraints that silently break STA, cross-checked against the RTL
+- **GDS Viewer**: GDSII/OASIS layouts: zoomable drawing with layer toggles, layer area/density, cell hierarchy and placement counts
 
 </td>
 <td valign="top">
@@ -102,6 +106,11 @@ Liberty, SDC, power and area reports, SPICE netlists, simulation logs) and turns
 ### 📊 Tracking
 
 - **Compare Runs**: two regressions or two timing reports side by side: new failures, fixed tests, improved and degraded endpoints
+- **Reports**: one click turns any analysis into a sign-off style **HTML or PDF report**
+
+### 🧮 Utilities
+
+- **Engineer's Calculators**: synchronizer MTBF, FIFO depth, setup/hold slack, clock period, dynamic power, wire RC delay, IR drop, gm/Id sizing, bus bandwidth, dBm ↔ mW
 
 </td>
 </tr>
@@ -205,7 +214,7 @@ from the browser, the terminal or your own Python scripts.
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS v4, Recharts, lucide-react     |
 | API      | FastAPI, Pydantic validation, JSON error handling, version handshake    |
 | Engine   | Python 3.10+ standard library only (regex parsers, SQLite)              |
-| Tests    | `unittest`: 105 tests covering parsers, generators, API and hosted mode |
+| Tests    | `unittest`: 150+ tests covering parsers, generators, checkers, API and hosted mode |
 | Hosting  | Vercel (frontend) + Render (API). See [DEPLOY.md](DEPLOY.md)            |
 
 <details>

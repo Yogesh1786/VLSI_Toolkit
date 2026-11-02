@@ -16,6 +16,8 @@ Rules (severity):
   CDC_SINGLE_FLOP     WARNING  clock-domain crossing through only one flip-flop
   CDC_MULTIBIT        WARNING  multi-bit bus through a 2-flop synchronizer: bits may
                                arrive in different cycles (use Gray code, handshake or FIFO)
+  RDC_UNSYNC          WARNING  reset-domain crossing: a flop reset asynchronously by one
+                               reset feeds a flop that is not reset by it
 
 This is a fast, heuristic checker (pattern based, no full elaboration).
 It does not replace a commercial lint tool (SpyGlass, Ascent, HAL), but it
@@ -41,6 +43,7 @@ SEVERITY = {
     "CDC_UNSYNC": "ERROR",
     "CDC_SINGLE_FLOP": "WARNING",
     "CDC_MULTIBIT": "WARNING",
+    "RDC_UNSYNC": "WARNING",
 }
 _SEV_ORDER = {"ERROR": 0, "WARNING": 1, "INFO": 2}
 
@@ -260,6 +263,7 @@ def _lint_module(text, start, end, file):
     for m in re.finditer(r"(?<![\w)`])#\s*\d+(?:\.\d+)?\b", text[start:end]):
         add(start + m.start(), "DELAY_IN_RTL", "#delay is ignored by synthesis")
     issues += _cdc(text, start, end, file)
+    issues += _rdc(text, start, end, file)
     return issues
 
 
@@ -350,6 +354,43 @@ def _cdc(text, start, end, file):
                         "different cycles; use Gray code, a handshake or an async FIFO",
                     )
                 )
+    return issues
+
+
+def _rdc(text, start, end, file):
+    """Reset-domain crossings inside one clock domain: data from a flop with asynchronous reset A
+    captured by a flop that is not reset by A. Asserting A alone can make the capturing flop
+    sample a changing value (metastability), the same way a clock-domain crossing does."""
+    flops = []  # (clock, async reset or None, lhs, rhs, position)
+    for b in _always_blocks(text, start, end):
+        if not b["clocked"]:
+            continue
+        clk = _block_clock(b["sens"])
+        if not clk:
+            continue
+        resets = [n for _, n in _EDGE_RE.findall(b["sens"]) if n != clk and _RESET_NAME.search(n)]
+        rst = resets[0] if resets else None
+        for m in _NB_ASSIGN_RE.finditer(text, b["start"], b["end"]):
+            flops.append((clk, rst, m.group(1), " ".join(m.group(2).split()), m.start(1)))
+    if len({r for _, r, *_ in flops if r}) < 1 or len({r for _, r, *_ in flops}) < 2:
+        return []   # one reset domain only
+    reset_of = {}
+    for clk, rst, lhs, _, _ in flops:
+        reset_of.setdefault((clk, lhs), set()).add(rst)
+    issues, seen = [], set()
+    for clk, rst, lhs, rhs, pos in flops:
+        for src in sorted(set(_IDENT_RE.findall(rhs))):
+            src_resets = reset_of.get((clk, src))
+            if not src_resets or src == lhs:
+                continue
+            for src_rst in sorted(r for r in src_resets if r):
+                if src_rst == rst or (src_rst, lhs) in seen:
+                    continue
+                seen.add((src_rst, lhs))
+                where = f"reset by {rst}" if rst else "not reset"
+                issues.append(Issue(file, _line_of(text, pos), "RDC_UNSYNC",
+                                    f"'{src}' (async reset {src_rst}) feeds '{lhs}' ({where}): asserting {src_rst} alone can "
+                                    f"make '{lhs}' go metastable; reset both with {src_rst} or isolate the path during reset"))
     return issues
 
 

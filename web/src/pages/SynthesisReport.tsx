@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Boxes, Cpu, Download, Layers } from "lucide-react";
 import { useAnalysis, type SourceFile, initialExample } from "../lib/api";
 import { FileSource } from "../components/FileSource";
+import { ReportButton, type Report as PageReport } from "../components/ReportButton";
 import { DataTable } from "../components/DataTable";
 import {
   Alert,
@@ -112,6 +113,22 @@ export default function SynthesisReport() {
       ]
     : [];
 
+  const report: PageReport | null = r && file ? {
+    tool: "Synthesis Report",
+    title: r.top ? `Top ${r.top}` : file.name,
+    files: [file.name],
+    kpis: [
+      { label: "Total cell area", value: area(r.total_area) },
+      { label: "Cells", value: r.total_cells ?? "–" },
+      { label: "Sequential cells", value: r.seq_cells ?? "–" },
+      { label: "Combinational area", value: area(r.comb_area) },
+    ],
+    sections: [
+      { title: "Area by module", kind: "table", columns: [{ key: "name", label: "Module" }, { key: "design", label: "Design" }, { key: "instances", label: "Instances", align: "right" }, { key: "total_area", label: "Area", align: "right" }, { key: "percent", label: "%", align: "right" }], rows: r.modules },
+      { title: "Cell types", kind: "table", limit: 40, columns: [{ key: "cell", label: "Cell" }, { key: "count", label: "Count", align: "right" }], rows: r.cell_types },
+    ],
+  } : null;
+
   return (
     <>
       <PageHeader
@@ -119,7 +136,9 @@ export default function SynthesisReport() {
         title="Synthesis Report"
         icon={Cpu}
         description="Read a synthesis area report (Yosys stat or Design Compiler report_area -hierarchy): total area, the area of each module and the most-used cells."
-        actions={
+        actions={<>
+          <ReportButton report={report} />
+          {
           r ? (
             <Button
               icon={Download}
@@ -131,6 +150,7 @@ export default function SynthesisReport() {
             </Button>
           ) : undefined
         }
+        </>}
       />
       <Card className="mb-6">
         <div className="mb-4 flex flex-wrap items-center gap-3 text-[13px] text-muted">

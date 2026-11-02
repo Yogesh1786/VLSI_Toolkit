@@ -23,6 +23,11 @@ import {
   FileCheck2,
   Gauge,
   Library,
+  Cog,
+  Calculator,
+  Workflow,
+  Radar,
+  Shapes,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,7 +45,8 @@ export type Area =
   | "Verification"
   | "Physical design"
   | "Analog"
-  | "Tracking";
+  | "Tracking"
+  | "Utilities";
 
 export const AREAS: { name: Area; blurb: string }[] = [
   {
@@ -67,6 +73,10 @@ export const AREAS: { name: Area; blurb: string }[] = [
   {
     name: "Tracking",
     blurb: "See what changed between two runs: regressions, timing, ECOs.",
+  },
+  {
+    name: "Utilities",
+    blurb: "Everyday engineering formulas: timing, CDC, power, wires, analog.",
   },
 ];
 
@@ -121,11 +131,25 @@ export const TOOLS: Tool[] = [
     description: "One spec → Verilog RTL, C header and HTML docs",
   },
   {
+    path: "/rtl-synth",
+    title: "RTL Synthesis",
+    area: "RTL design",
+    icon: Cog,
+    description: "Real Yosys synthesis: gates, flip-flops, depth, netlist",
+  },
+  {
     path: "/testbench",
     title: "Testbench Generator",
     area: "Verification",
     icon: FlaskConical,
     description: "Verilog and cocotb testbenches with clock and reset",
+  },
+  {
+    path: "/uvm",
+    title: "UVM Testbench",
+    area: "Verification",
+    icon: Workflow,
+    description: "Full UVM environment + coverage from a module",
   },
   {
     path: "/regression",
@@ -156,6 +180,13 @@ export const TOOLS: Tool[] = [
     description: "AXI rule checks and transactions from a VCD",
   },
   {
+    path: "/protocols",
+    title: "Protocol Checker",
+    area: "Verification",
+    icon: Radar,
+    description: "APB, AHB-Lite, AXI-Stream, SPI, I2C, UART on a VCD",
+  },
+  {
     path: "/timing",
     title: "Timing (STA)",
     area: "Physical design",
@@ -168,6 +199,13 @@ export const TOOLS: Tool[] = [
     area: "Physical design",
     icon: Grid3x3,
     description: "Utilization, cell mix, placement density heatmap",
+  },
+  {
+    path: "/gds",
+    title: "GDS Viewer",
+    area: "Physical design",
+    icon: Shapes,
+    description: "GDSII/OASIS layout: layers, hierarchy, zoomable view",
   },
   {
     path: "/liberty",
@@ -231,6 +269,13 @@ export const TOOLS: Tool[] = [
     area: "Tracking",
     icon: Gauge,
     description: "Tool usage, failures and visitor feedback",
+  },
+  {
+    path: "/calculators",
+    title: "Calculators",
+    area: "Utilities",
+    icon: Calculator,
+    description: "MTBF, FIFO depth, slack, power, wire RC, IR drop, gm/Id",
   },
 ];
 

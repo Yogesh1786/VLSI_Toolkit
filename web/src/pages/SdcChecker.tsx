@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BookOpen, Bug, Clock, Code, FileCheck2 } from "lucide-react";
 import { useAnalysis, type SourceFile, initialExample } from "../lib/api";
 import { FileSource } from "../components/FileSource";
+import { ReportButton, type Report } from "../components/ReportButton";
 import { DataTable } from "../components/DataTable";
 import { CodeBlock } from "../components/CodeBlock";
 import {
@@ -72,9 +73,26 @@ export default function SdcChecker() {
     (r?.rules ?? []).map((x) => [x.rule, x.description]),
   );
 
+  const report: Report | null = r && file ? {
+    tool: "SDC Checker",
+    title: file.name,
+    files: [file.name, ...(useRtl && rtl ? rtl.map((f) => f.name) : [])],
+    verdict: r.counts.ERROR ? { tone: "bad", text: `${r.counts.ERROR} error(s): some constraints are ignored or wrong` } : r.counts.WARNING ? { tone: "warn", text: `No errors, ${r.counts.WARNING} warning(s)` } : { tone: "good", text: "Constraints are clean" },
+    kpis: [
+      { label: "Errors", value: r.counts.ERROR, tone: r.counts.ERROR ? "bad" : "good" },
+      { label: "Warnings", value: r.counts.WARNING, tone: r.counts.WARNING ? "warn" : "good" },
+      { label: "Clocks", value: r.clocks.length },
+      { label: "I/O delays", value: r.io_delays.length },
+    ],
+    sections: [
+      { title: "Findings", kind: "table", columns: [{ key: "severity", label: "Severity" }, { key: "rule", label: "Rule" }, { key: "line", label: "Line", align: "right" }, { key: "message", label: "Message" }], rows: r.issues },
+      { title: "Clocks", kind: "table", columns: [{ key: "name", label: "Clock" }, { key: "period", label: "Period (ns)", align: "right" }, { key: "freq_mhz", label: "MHz", align: "right" }, { key: "ports", label: "Source" }, { key: "uncertainty", label: "Uncertainty" }], rows: r.clocks },
+    ],
+  } : null;
+
   return (
     <>
-      <PageHeader
+      <PageHeader actions={<ReportButton report={report} />}
         area="Physical design"
         title="SDC Checker"
         icon={FileCheck2}

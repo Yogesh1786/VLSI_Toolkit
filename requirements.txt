@@ -3,5 +3,8 @@
 fastapi>=0.141        # python -m uvicorn api.main:app --port 8000
 uvicorn>=0.29
 pymongo>=4.6          # MongoDB storage (used only when MONGODB_URI is set)
+yowasp-yosys>=0.50    # RTL Synthesis page: Yosys compiled to WebAssembly, no install needed
+pyslang>=8.0          # RTL Lint compiler checks: full SystemVerilog front end (slang)
+gdstk>=0.9            # GDS Viewer: GDSII/OASIS layouts
 
 # Optional extras (matplotlib, pyyaml, cocotb): pip install -r requirements-extras.txt

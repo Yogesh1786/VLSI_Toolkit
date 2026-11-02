@@ -5,9 +5,9 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse, Response
 
-from vlsi_toolkit import __version__, examples_catalog, history, spice, store
+from vlsi_toolkit import __version__, examples_catalog, history, spice, store, yosys_synth
 
-API_VERSION = 7  # bump when endpoints are added or changed; the web app checks it
+API_VERSION = 8  # bump when endpoints are added or changed; the web app checks it
 EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
 
 router = APIRouter(prefix="/api", tags=["General"])
@@ -24,6 +24,7 @@ def health(request: Request):
         "version": __version__,
         "api_version": API_VERSION,
         "ngspice": bool(spice.find_ngspice()),
+        "yosys": yosys_synth.engine()[0],
         "hosted": history.hosted(),
         "database": store.public_info(),
         "endpoints": endpoints,

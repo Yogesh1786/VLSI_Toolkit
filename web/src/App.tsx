@@ -24,6 +24,11 @@ import PowerReport from "./pages/PowerReport";
 import SdcChecker from "./pages/SdcChecker";
 import Activity from "./pages/Activity";
 import Examples from "./pages/Examples";
+import RtlSynthesis from "./pages/RtlSynthesis";
+import Calculators from "./pages/Calculators";
+import UvmTestbench from "./pages/UvmTestbench";
+import ProtocolChecker from "./pages/ProtocolChecker";
+import GdsViewer from "./pages/GdsViewer";
 import { EmptyState } from "./components/ui";
 import { SearchX } from "lucide-react";
 
@@ -55,6 +60,11 @@ export default function App() {
         <Route path="/compare" element={<Compare />} />
         <Route path="/activity" element={<Activity />} />
         <Route path="/examples" element={<Examples />} />
+        <Route path="/rtl-synth" element={<RtlSynthesis />} />
+        <Route path="/calculators" element={<Calculators />} />
+        <Route path="/uvm" element={<UvmTestbench />} />
+        <Route path="/protocols" element={<ProtocolChecker />} />
+        <Route path="/gds" element={<GdsViewer />} />
         <Route
           path="*"
           element={

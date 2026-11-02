@@ -44,8 +44,12 @@ KINDS = {
     "sdc": "Timing constraints (SDC)",
     "synth": "Synthesis report",
     "power": "Power report",
+    "gds": "GDS/OASIS layout",
 }
 _EXT = {
+    ".gds": "gds",
+    ".gds2": "gds",
+    ".oas": "gds",
     ".v": "rtl",
     ".sv": "rtl",
     ".vh": "rtl",
@@ -101,10 +105,10 @@ _SNIFF = [  # (kind, pattern) checked in this order on the first 64 KB
 
 # which tool page opens which kind of file (used by the web app)
 TOOLS_FOR_KIND = {
-    "rtl": ["/lint", "/modules", "/hierarchy", "/sva"],
+    "rtl": ["/lint", "/modules", "/hierarchy", "/rtl-synth", "/sva"],
     "log": ["/regression"],
     "timing": ["/timing"],
-    "vcd": ["/vcd", "/axi"],
+    "vcd": ["/vcd", "/axi", "/protocols"],
     "def": ["/floorplan"],
     "lef": ["/floorplan"],
     "liberty": ["/liberty"],
@@ -114,6 +118,7 @@ TOOLS_FOR_KIND = {
     "sdc": ["/sdc"],
     "synth": ["/synthesis"],
     "power": ["/power"],
+    "gds": ["/gds"],
 }
 
 

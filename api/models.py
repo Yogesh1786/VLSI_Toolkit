@@ -73,3 +73,18 @@ class SdcRequest(SourceFile):
         []
     )  # optional top-level RTL: port-name and I/O-coverage checks
     module: str | None = None
+
+
+class SynthRequest(Files):
+    top: str | None = None          # top module; picked automatically when empty
+    flatten: bool = False
+
+
+class UvmRequest(SourceFile):
+    module: str | None = None
+    prefix: str | None = Field(None, max_length=40)
+    num_items: int = Field(20, ge=1, le=10000)
+
+
+class LintRequest(Files):
+    compiler: bool = True           # also run the slang SystemVerilog compiler checks (when installed)

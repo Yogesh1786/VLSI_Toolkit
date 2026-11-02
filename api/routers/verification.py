@@ -2,11 +2,12 @@
 
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 
-from vlsi_toolkit import axi, regress, sva, tb_generator, vcd_analyzer, verilog_parser
+from vlsi_toolkit import axi, protocols, regress, sva, tb_generator, uvm_gen, vcd_analyzer, verilog_parser
 
-from ..models import AxiRequest, Files, SvaRequest, TestbenchRequest, VcdRequest
+from ..models import AxiRequest, Files, SvaRequest, TestbenchRequest, UvmRequest, VcdRequest
 
 router = APIRouter(prefix="/api/verif", tags=["Verification"])
 
@@ -153,3 +154,42 @@ def assertions(req: SvaRequest):
         return {"error": str(exc), "modules": [m for _, m in modules], "module": target}
     result["all_modules"] = [{"file": f, "module": m} for f, m in modules]
     return result
+
+
+def _uvm(req: UvmRequest):
+    modules = verilog_parser.parse_text(req.text)
+    if not modules:
+        raise HTTPException(400, "No module found in this file.")
+    try:
+        mod = verilog_parser.pick_module(modules, req.module)
+    except ValueError:
+        mod = modules[-1]
+    return modules, uvm_gen.uvm_testbench(mod, req.prefix or None, req.num_items)
+
+
+@router.post("/uvm")
+def uvm_testbench(req: UvmRequest):
+    """A complete UVM environment (interface, agent, scoreboard, coverage, env, test, tb_top) for one module."""
+    modules, r = _uvm(req)
+    return r | {"modules": [m.name for m in modules]}
+
+
+@router.post("/uvm/zip")
+def uvm_testbench_zip(req: UvmRequest):
+    """The same files as one .zip download."""
+    import io
+    import zipfile
+
+    _, r = _uvm(req)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, code in r["files"].items():
+            z.writestr(f"{r['prefix']}_uvm/{name}", code)
+    return Response(buf.getvalue(), media_type="application/zip",
+                    headers={"Content-Disposition": f'attachment; filename="{r["prefix"]}_uvm.zip"'})
+
+
+@router.post("/protocols")
+def protocol_check(req: AxiRequest):
+    """APB, AHB-Lite, AXI-Stream, SPI, I2C and UART checks/decoding on a VCD (interfaces found by signal names)."""
+    return protocols.analyze_vcd_text(req.text, req.timeout)

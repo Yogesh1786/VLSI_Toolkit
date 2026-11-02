@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAnalysis, type SourceFile, initialExample } from "../lib/api";
 import { FileSource } from "../components/FileSource";
+import { ReportButton, type Report } from "../components/ReportButton";
 import { DataTable } from "../components/DataTable";
 import { AxiTimeline } from "../components/charts";
 import {
@@ -138,9 +139,25 @@ export default function AxiChecker() {
         .filter((t) => kinds.includes(t.kind))
     : [];
 
+  const report: Report | null = itf && file ? {
+    tool: "AXI Protocol Checker",
+    title: `${itf.kind} interface ${itf.interface}`,
+    files: [file.name],
+    verdict: errors ? { tone: "bad", text: `Protocol check FAILED: ${errors} error(s), ${warnings} warning(s)` } : warnings ? { tone: "warn", text: `Passed with ${warnings} warning(s)` } : { tone: "good", text: "Protocol check PASSED" },
+    kpis: [
+      { label: "Errors", value: errors, tone: errors ? "bad" : "good" },
+      { label: "Warnings", value: warnings, tone: warnings ? "warn" : "good" },
+      { label: "Transactions", value: itf.transactions.length },
+    ],
+    sections: [
+      { title: "Violations", kind: "table", columns: [{ key: "cycle", label: "Cycle", align: "right" }, { key: "severity", label: "Severity" }, { key: "rule", label: "Rule" }, { key: "channel", label: "Channel" }, { key: "message", label: "What happened" }], rows: itf.violations },
+      { title: "Transactions", kind: "table", limit: 100, columns: [{ key: "kind", label: "Type" }, { key: "id", label: "ID" }, { key: "addr", label: "Address" }, { key: "beats", label: "Beats", align: "right" }, { key: "resp", label: "Response" }, { key: "latency", label: "Latency", align: "right" }], rows: itf.transactions },
+    ],
+  } : null;
+
   return (
     <>
-      <PageHeader
+      <PageHeader actions={<ReportButton report={report} />}
         area="Verification"
         title="AXI Protocol Checker"
         icon={ArrowLeftRight}
